@@ -1,7 +1,9 @@
 package com.fag.Autofinance.Entities;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -13,7 +15,7 @@ public class Cliente {
 
     @Id
     @Column(name = "cpf_cnpj")
-    @Pattern(regexp = "^\\d{11}  \\d{14}$", message = "CPF ou CNPJ deve conter apenas números (11 para CPF, 14 para CNPJ)")
+
     private String cpfCnpj;
 
     @NotEmpty
@@ -33,7 +35,7 @@ public class Cliente {
     private LocalDateTime dataCadastro;
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Veiculo> veiculo;
+    private Set<Veiculo> veiculos = new HashSet<>();
 
     public String getCpfCnpj() {
         return cpfCnpj;
@@ -81,6 +83,14 @@ public class Cliente {
 
     public void setDataCadastro(LocalDateTime dataCadastro) {
         this.dataCadastro = dataCadastro;
+    }
+
+    public Set<Veiculo> getVeiculos() {
+        return veiculos;
+    }
+
+    public void setVeiculos(Set<Veiculo> veiculos) {
+        this.veiculos = veiculos;
     }
 
 }

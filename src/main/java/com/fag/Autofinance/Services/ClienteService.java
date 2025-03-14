@@ -11,8 +11,11 @@ import com.fag.Autofinance.Repositories.ClienteRepository;
 @Service
 public class ClienteService {
 
-    @Autowired
-    private ClienteRepository clienteRepository;
+    private final ClienteRepository clienteRepository;
+
+    public ClienteService(ClienteRepository clienteRepository) {
+        this.clienteRepository = clienteRepository;
+    }
 
     public Cliente salvarCliente(Cliente cliente) {
         String cpfCnpjLimpo = cliente.getCpfCnpj().replaceAll("[^0-9]", "");

@@ -1,25 +1,30 @@
 package com.fag.Autofinance.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 @Entity
 public class Veiculo {
 
     @Id
-    @Pattern(regexp = "^\\d{7}$", message = "A placa está incorreta")
+    @Column(length = 8, nullable = false)
     private String placa;
 
+    @NotBlank(message = "o modelo não pode estar vazio")
     private String modelo;
 
     private Integer ano;
 
     @ManyToOne
     @JoinColumn(name = "cpf_cnpj", nullable = false)
+    @JsonIgnore
     private Cliente cliente;
 
     public String getPlaca() {

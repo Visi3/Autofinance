@@ -9,14 +9,15 @@ import org.springframework.web.bind.annotation.*;
 import com.fag.Autofinance.Entities.Cliente;
 import com.fag.Autofinance.Services.ClienteService;
 
-import jakarta.validation.Valid;
-
 @RestController
 @RequestMapping("/clientes")
 public class ClienteController {
 
-    @Autowired
-    private ClienteService clienteService;
+    private final ClienteService clienteService;
+
+    public ClienteController(ClienteService clienteService) {
+        this.clienteService = clienteService;
+    }
 
     @PostMapping
     public ResponseEntity<Cliente> criarOuAtualizarCliente(@RequestBody Cliente cliente) {
