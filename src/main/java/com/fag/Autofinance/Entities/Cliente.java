@@ -1,8 +1,7 @@
-package com.fag.Autofinance.Entities;
+package com.fag.Autofinance.entities;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -27,8 +26,6 @@ public class Cliente {
 
     @Pattern(regexp = "^(\\+\\d{1,2}\\s?)?\\(?\\d{2}\\)?\\s?\\d{4,5}-?\\d{4}$", message = "Formato de celular inválido")
     private String celular;
-
-    private String endereco;
 
     @CreationTimestamp
     @Column(name = "data_cadastro", updatable = false, nullable = false)
@@ -67,14 +64,6 @@ public class Cliente {
 
     public void setCelular(String celular) {
         this.celular = celular;
-    }
-
-    public String getEndereco() {
-        return endereco;
-    }
-
-    public void setEndereco(String endereco) {
-        this.endereco = endereco;
     }
 
     public LocalDateTime getDataCadastro() {

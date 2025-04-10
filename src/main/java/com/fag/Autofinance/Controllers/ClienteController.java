@@ -1,13 +1,13 @@
-package com.fag.Autofinance.Controllers;
+package com.fag.Autofinance.controllers;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.fag.Autofinance.Entities.Cliente;
-import com.fag.Autofinance.Services.ClienteService;
+
+import com.fag.Autofinance.entities.Cliente;
+import com.fag.Autofinance.services.ClienteService;
 
 @RestController
 @RequestMapping("/clientes")

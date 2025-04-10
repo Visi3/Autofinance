@@ -1,4 +1,4 @@
-package com.fag.Autofinance.Controllers;
+package com.fag.Autofinance.controllers;
 
 import java.util.List;
 
@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fag.Autofinance.Entities.Veiculo;
-import com.fag.Autofinance.Services.VeiculoService;
+import com.fag.Autofinance.entities.Veiculo;
+import com.fag.Autofinance.services.VeiculoService;
 
 @RestController
 @RequestMapping("/veiculos")

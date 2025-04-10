@@ -1,4 +1,4 @@
-package com.fag.Autofinance.Entities;
+package com.fag.Autofinance.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 
 @Entity
 public class Veiculo {

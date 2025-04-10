@@ -1,12 +1,11 @@
-package com.fag.Autofinance.Services;
+package com.fag.Autofinance.services;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fag.Autofinance.Entities.Cliente;
-import com.fag.Autofinance.Repositories.ClienteRepository;
+import com.fag.Autofinance.entities.Cliente;
+import com.fag.Autofinance.repositories.ClienteRepository;
 
 @Service
 public class ClienteService {

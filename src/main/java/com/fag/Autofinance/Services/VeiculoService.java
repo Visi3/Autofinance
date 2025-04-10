@@ -1,12 +1,12 @@
-package com.fag.Autofinance.Services;
+package com.fag.Autofinance.services;
 
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fag.Autofinance.Entities.Veiculo;
-import com.fag.Autofinance.Repositories.VeiculoRepository;
+import com.fag.Autofinance.entities.Veiculo;
+import com.fag.Autofinance.repositories.VeiculoRepository;
 
 @Service
 public class VeiculoService {
