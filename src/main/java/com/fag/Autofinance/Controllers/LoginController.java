@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fag.Autofinance.dto.LoginRequest;
 import com.fag.Autofinance.dto.TokenResponse;
-import com.fag.Autofinance.security.JwtUtil;
+import com.fag.Autofinance.security.TokenService;
 
 @RestController
 @RequestMapping("/auth")
@@ -27,7 +27,7 @@ public class LoginController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private TokenService tokenService;
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
@@ -42,9 +42,9 @@ public class LoginController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader) {
-        String token = extrairToken(authHeader);
-        String email = jwtUtil.extrairEmail(token);
-        jwtUtil.revogarToken(email);
+        // String token = extrairToken(authHeader);
+        String email = tokenService.validarToken(authHeader);
+        tokenService.revogarToken(email);
         return ResponseEntity.ok("Logout realizado com sucesso.");
     }
 
@@ -57,10 +57,12 @@ public class LoginController {
 
     private String gerarToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return jwtUtil.gerarToken(userDetails);
+        return tokenService.gerarToken(userDetails);
     }
 
-    private String extrairToken(String authHeader) {
-        return authHeader.replace("Bearer ", "");
-    }
+    /*
+     * private String extrairToken(String authHeader) {
+     * return authHeader.replace("Bearer ", "");
+     * }
+     */
 }

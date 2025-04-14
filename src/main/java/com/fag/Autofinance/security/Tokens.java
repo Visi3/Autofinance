@@ -13,8 +13,8 @@ public class Tokens {
         tokenMap.put(email, token);
     }
 
-    public boolean tokenEhValido(String email, String token) {
-        return token.equals(tokenMap.get(email));
+    public String getToken(String email) {
+        return tokenMap.get(email);
     }
 
     public void removerToken(String email) {
