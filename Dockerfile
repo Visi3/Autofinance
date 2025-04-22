@@ -8,15 +8,15 @@ COPY . .
 # Garante permissão de execução ao wrapper do Maven
 RUN chmod +x ./mvnw
 
-# Compila o projeto sem rodar os testes
+# Executa o build, sem testes
 RUN ./mvnw clean package -DskipTests
 
 # Etapa de execução
 FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copia o .jar gerado da fase anterior
-COPY --from=build /app/target/Autofinance-0.0.1-SNAPSHOT.jar app.jar
+# Copia o .jar gerado do build
+COPY --from=build /app/target/Autofinance-0.0.1-SNAPSHOT.jar.original app.jar
 
-# Comando para rodar a aplicação
+# Comando para rodar a aplicação Spring Boot
 ENTRYPOINT ["java", "-jar", "app.jar"]
