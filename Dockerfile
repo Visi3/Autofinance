@@ -16,7 +16,7 @@ FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
 # Copia o .jar gerado do build
-COPY --from=build /app/target/Autofinance-0.0.1-SNAPSHOT.jar.original app.jar
+COPY --from=build /app/target/Autofinance-0.0.1-SNAPSHOT.jar /app.jar
 
 # Comando para rodar a aplicação Spring Boot
 ENTRYPOINT ["java", "-jar", "app.jar"]
