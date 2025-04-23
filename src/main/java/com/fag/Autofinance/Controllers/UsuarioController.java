@@ -11,20 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fag.Autofinance.services.UsuarioService;
-
 @RestController
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
-    @Autowired
     private AuthenticationManager authenticationManager;
-
-    private final UsuarioService usuarioService;
-
-    public UsuarioController(UsuarioService usuarioService) {
-        this.usuarioService = usuarioService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody String email, @RequestBody String senha) {
