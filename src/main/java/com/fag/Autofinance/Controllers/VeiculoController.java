@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -34,9 +35,21 @@ public class VeiculoController {
         return new ResponseEntity<>(veiculoSalvo, HttpStatus.CREATED);
     }
 
+    @GetMapping("/{placa}")
+    public ResponseEntity<Veiculo> buscarVeiculo(@PathVariable String placa) {
+        Veiculo veiculo = veiculoService.buscarPorPlaca(placa);
+        return ResponseEntity.ok(veiculo);
+    }
+
     @GetMapping
     public List<Veiculo> listarVeiculos() {
         return veiculoService.listarVeiculos();
+    }
+
+    @PutMapping("/{placa}")
+    public ResponseEntity<Veiculo> atualizarVeiculo(@PathVariable String placa, @RequestBody Veiculo veiculo) {
+        Veiculo atualizado = veiculoService.atualizarVeiculo(placa, veiculo);
+        return ResponseEntity.ok(atualizado);
     }
 
     @DeleteMapping("/{placa}")

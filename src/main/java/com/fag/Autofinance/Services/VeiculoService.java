@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import com.fag.Autofinance.entities.Veiculo;
 import com.fag.Autofinance.repositories.VeiculoRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 public class VeiculoService {
 
@@ -24,6 +26,21 @@ public class VeiculoService {
 
     public List<Veiculo> listarVeiculos() {
         return veiculoRepository.findAll();
+    }
+
+    public Veiculo buscarPorPlaca(String placa) {
+        return veiculoRepository.findById(placa)
+                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado"));
+    }
+
+    public Veiculo atualizarVeiculo(String placa, Veiculo veiculoAtualizado) {
+        Veiculo veiculoExistente = veiculoRepository.findById(placa)
+                .orElseThrow(() -> new EntityNotFoundException("Veículo com placa " + placa + " não encontrado."));
+
+        veiculoExistente.setModelo(veiculoAtualizado.getModelo());
+        veiculoExistente.setAno(veiculoAtualizado.getAno());
+
+        return veiculoRepository.save(veiculoExistente);
     }
 
     public void deletarVeiculo(String placa) {

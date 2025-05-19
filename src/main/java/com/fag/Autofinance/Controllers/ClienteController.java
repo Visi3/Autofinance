@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import com.fag.Autofinance.entities.Cliente;
 import com.fag.Autofinance.services.ClienteService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/clientes")
 public class ClienteController {
@@ -25,9 +27,21 @@ public class ClienteController {
         return new ResponseEntity<>(clienteSalvo, HttpStatus.CREATED);
     }
 
+    @GetMapping("/{cpfCnpj}")
+    public ResponseEntity<Cliente> buscarClientePorCpfCnpj(@PathVariable String cpfCnpj) {
+        Cliente cliente = clienteService.buscarClientePorCpfCnpj(cpfCnpj);
+        return ResponseEntity.ok(cliente);
+    }
+
     @GetMapping
     public List<Cliente> listarClientes() {
         return clienteService.listarClientes();
+    }
+
+    @PutMapping("/{cpfCnpj}")
+    public ResponseEntity<Cliente> atualizarCliente(@PathVariable String cpfCnpj, @RequestBody @Valid Cliente cliente) {
+        Cliente atualizado = clienteService.atualizarCliente(cpfCnpj, cliente);
+        return ResponseEntity.ok(atualizado);
     }
 
     @DeleteMapping("/{cpfCnpj}")

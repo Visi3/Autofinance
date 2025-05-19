@@ -14,15 +14,11 @@ public class Cliente {
 
     @Id
     @Column(name = "cpf_cnpj")
-
     private String cpfCnpj;
 
     @NotEmpty
     @Size(min = 2, max = 100)
     private String nome;
-
-    @Email
-    private String email;
 
     @Pattern(regexp = "^(\\+\\d{1,2}\\s?)?\\(?\\d{2}\\)?\\s?\\d{4,5}-?\\d{4}$", message = "Formato de celular inválido")
     private String celular;
@@ -48,14 +44,6 @@ public class Cliente {
 
     public void setNome(String nome) {
         this.nome = nome;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getCelular() {
