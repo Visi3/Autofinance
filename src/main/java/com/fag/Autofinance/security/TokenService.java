@@ -13,7 +13,7 @@ import java.util.Date;
 public class TokenService {
 
     private static final String SECRET_KEY = "umsegredobemgrandeaqui1234567890seguro";
-    private static final long EXPIRATION_TIME = 1000 * 60;
+    private static final long EXPIRATION_TIME = 1000 * 60 * 60;
 
     private final Tokens tokens;
 
