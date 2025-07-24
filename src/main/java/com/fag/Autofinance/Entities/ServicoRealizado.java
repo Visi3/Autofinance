@@ -25,15 +25,14 @@ public class ServicoRealizado {
     @ManyToOne(optional = false)
     private Veiculo veiculo;
 
-    /*@ManyToOne(optional = false)
-    private OrdemServico ordemServico;*/
+    /*
+     * @ManyToOne(optional = false)
+     * private OrdemServico ordemServico;
+     */
 
     private LocalDate dataExecucao;
 
     private LocalDate dataPrevistaRetorno;
-
-    @Enumerated(EnumType.STRING)
-    private StatusCadastros status = StatusCadastros.ATIVO;
 
     public Long getId() {
         return id;
@@ -75,13 +74,4 @@ public class ServicoRealizado {
         this.dataPrevistaRetorno = dataPrevistaRetorno;
     }
 
-    public StatusCadastros getStatus() {
-        return status;
-    }
-
-    public void setStatus(StatusCadastros status) {
-        this.status = status;
-    }
-
-    
 }

@@ -30,12 +30,18 @@ public class Servico {
     @NotBlank
     private String categoria;
 
+    private Boolean possuiRetorno = false;
+
     private Integer mesesRetornoPadrao;
 
     private String mensagemRetornoPadrao;
 
     @Enumerated(EnumType.STRING)
     private StatusCadastros status = StatusCadastros.ATIVO;
+
+    public Long getId() {
+        return id;
+    }
 
     public void setId(Long id) {
         this.id = id;
@@ -81,6 +87,14 @@ public class Servico {
         this.categoria = categoria;
     }
 
+    public Boolean getPossuiRetorno() {
+        return possuiRetorno;
+    }
+
+    public void setPossuiRetorno(Boolean possuiRetorno) {
+        this.possuiRetorno = possuiRetorno;
+    }
+
     public Integer getMesesRetornoPadrao() {
         return mesesRetornoPadrao;
     }
@@ -102,5 +116,7 @@ public class Servico {
     }
 
     public void setStatus(StatusCadastros status) {
-     
- }}
+        this.status = status;
+    }
+
+}
