@@ -1,6 +1,5 @@
 package com.fag.Autofinance.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,11 +16,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class ConfigSecurity {
 
-        @Autowired
-        private SecurityFilter securityFilter;
+        private final SecurityFilter securityFilter;
+
+        public ConfigSecurity(SecurityFilter securityFilter) {
+                this.securityFilter = securityFilter;
+        }
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
                 http
                                 .csrf().disable()
                                 .authorizeHttpRequests(auth -> auth

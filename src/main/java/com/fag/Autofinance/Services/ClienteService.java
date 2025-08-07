@@ -1,14 +1,17 @@
 package com.fag.Autofinance.services;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
+import org.springframework.stereotype.Service;
+
+import com.fag.Autofinance.dto.ClienteDTO;
 import com.fag.Autofinance.entities.Cliente;
 import com.fag.Autofinance.enums.StatusCadastros;
+import com.fag.Autofinance.exception.JaExisteException;
+import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.ClienteRepository;
 
 @Service
@@ -17,28 +20,25 @@ public class ClienteService {
     @Autowired
     private ClienteRepository clienteRepository;
 
-    public List<Cliente> listarTodos() {
-        return clienteRepository.findAll();
+    public List<ClienteDTO> listarTodos() {
+        return clienteRepository.findAll().stream().map(ClienteDTO::new).collect(Collectors.toList());
     }
 
-    public List<Cliente> listarPorStatus(StatusCadastros status) {
-        return clienteRepository.findByStatus(status);
+    public List<ClienteDTO> listarPorStatus(StatusCadastros status) {
+        return clienteRepository.findByStatus(status).stream().map(ClienteDTO::new).collect(Collectors.toList());
     }
 
-    public Cliente listarPorCpfCnpj(String cpfCnpj) {
-        return clienteRepository.findByCpfCnpj(cpfCnpj)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+    public ClienteDTO listarPorCpfCnpj(String cpfCnpj) {
+        Cliente cliente = clienteRepository.findByCpfCnpj(cpfCnpj)
+                .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
+        return new ClienteDTO(cliente);
     }
 
     public Cliente criar(Cliente cliente) {
 
-        /*
-         * if (clienteRepository.existsById(cliente.getCpfCnpj())) {
-         * throw new ResponseStatusException(
-         * HttpStatus.CONFLICT,
-         * "Já existe um cliente com esse CPF/CNPJ.");
-         * }
-         */
+        if (clienteRepository.existsByCpfCnpj(cliente.getCpfCnpj())) {
+            throw new JaExisteException("Já existe um cliente com este CPF/CNPJ");
+        }
 
         cliente.setStatus(StatusCadastros.ATIVO);
         return clienteRepository.save(cliente);
@@ -46,7 +46,7 @@ public class ClienteService {
 
     public Cliente atualizar(String cpfCnpj, Cliente clienteAtualizado) {
         Cliente clienteExistente = clienteRepository.findByCpfCnpj(cpfCnpj)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+                .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
         clienteExistente.setNome(clienteAtualizado.getNome());
         clienteExistente.setEmail(clienteAtualizado.getEmail());
         clienteExistente.setCelular(clienteAtualizado.getCelular());

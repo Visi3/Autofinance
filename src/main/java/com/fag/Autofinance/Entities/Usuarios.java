@@ -1,91 +1,88 @@
 package com.fag.Autofinance.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fag.Autofinance.enums.RoleUsuario;
+import com.fag.Autofinance.enums.StatusCadastros;
 
 @Entity
-public class Usuarios {
+@Getter
+@Setter
+public class Usuarios implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @NotBlank
+    @Size(min = 3, max = 20)
+    @Column(unique = true, nullable = false)
+    private String username;
 
-    private String nome;
-
-    @Column(unique = true)
+    @Email
     private String email;
 
-    private String senha;
-
-    @Enumerated(EnumType.STRING)
-    private TipoUsuario tipo;
-
     private String telefone;
+
+    @NotBlank
+    private String password;
 
     @CreationTimestamp
     @Column(name = "data_cadastro", updatable = false, nullable = false)
     private LocalDateTime dataCadastro;
 
-    public enum TipoUsuario {
-        MECANICO, ADMIN
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RoleUsuario role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusCadastros status = StatusCadastros.ATIVO;
+
+    public Usuarios() {
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
+    public Usuarios(String username, String password, String email, RoleUsuario role) {
+        this.username = username;
+        this.password = password;
         this.email = email;
+        this.role = role;
+        this.status = StatusCadastros.ATIVO;
     }
 
-    public String getSenha() {
-        return senha;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(() -> "ROLE_" + role.name());
     }
 
-    public void setSenha(String senha) {
-        this.senha = senha;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
 
-    public TipoUsuario getTipo() {
-        return tipo;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
     }
 
-    public void setTipo(TipoUsuario tipo) {
-        this.tipo = tipo;
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
     }
 
-    public String getTelefone() {
-        return telefone;
-    }
-
-    public void setTelefone(String telefone) {
-        this.telefone = telefone;
-    }
-
-    public LocalDateTime getDataCadastro() {
-        return dataCadastro;
-    }
-
-    public void setDataCadastro(LocalDateTime dataCadastro) {
-        this.dataCadastro = dataCadastro;
+    @Override
+    public boolean isEnabled() {
+        return status == StatusCadastros.ATIVO;
     }
 
 }

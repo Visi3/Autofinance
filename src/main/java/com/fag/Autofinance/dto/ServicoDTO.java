@@ -1,39 +1,30 @@
-package com.fag.Autofinance.entities;
+package com.fag.Autofinance.dto;
 
+import com.fag.Autofinance.entities.Servico;
 import com.fag.Autofinance.enums.StatusCadastros;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.persistence.Enumerated;
-
-@Entity
-public class Servico {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ServicoDTO {
     private Long id;
-
-    @NotBlank
     private String nome;
-
     private String descricao;
-
     private Double preco;
-
     private String duracao;
-
-    private Boolean possuiRetorno = false;
-
+    private Boolean possuiRetorno;
     private Integer mesesRetornoPadrao;
-
     private String mensagemRetornoPadrao;
+    private StatusCadastros status;
 
-    @Enumerated(EnumType.STRING)
-    private StatusCadastros status = StatusCadastros.ATIVO;
+    public ServicoDTO(Servico servico) {
+        this.id = servico.getId();
+        this.nome = servico.getNome();
+        this.descricao = servico.getDescricao();
+        this.preco = servico.getPreco();
+        this.duracao = servico.getDuracao();
+        this.possuiRetorno = servico.getPossuiRetorno();
+        this.mesesRetornoPadrao = servico.getMesesRetornoPadrao();
+        this.mensagemRetornoPadrao = servico.getMensagemRetornoPadrao();
+        this.status = servico.getStatus();
+    }
 
     public Long getId() {
         return id;
