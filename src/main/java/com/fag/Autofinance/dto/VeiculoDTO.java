@@ -1,51 +1,36 @@
-package com.fag.Autofinance.entities;
+package com.fag.Autofinance.dto;
 
+import com.fag.Autofinance.entities.Veiculo;
 import com.fag.Autofinance.enums.StatusCadastros;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.validation.constraints.NotBlank;
-
-@Entity
-public class Veiculo {
-
-    @Id
-    @Column(length = 8, nullable = false)
+public class VeiculoDTO {
     private String placa;
-
-    @NotBlank(message = "o modelo não pode estar vazio")
     private String modelo;
-
-    @NotBlank
     private String marca;
-
     private Integer ano;
-
     private String cor;
-
     private String renavam;
-
     private String chassi;
-
     private String combustivel;
-
     private String quilometragem;
-
     private String observacoes;
+    private StatusCadastros status;
+    private ClienteDTO cliente;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatusCadastros status = StatusCadastros.ATIVO;
-
-    @ManyToOne
-    @JoinColumn(name = "cpf_cnpj", nullable = false)
-    private Cliente cliente;
+    public VeiculoDTO(Veiculo veiculo) {
+        this.placa = veiculo.getPlaca();
+        this.modelo = veiculo.getModelo();
+        this.marca = veiculo.getMarca();
+        this.ano = veiculo.getAno();
+        this.cor = veiculo.getCor();
+        this.renavam = veiculo.getRenavam();
+        this.chassi = veiculo.getChassi();
+        this.combustivel = veiculo.getCombustivel();
+        this.quilometragem = veiculo.getQuilometragem();
+        this.observacoes = veiculo.getObservacoes();
+        this.status = veiculo.getStatus();
+        this.cliente = new ClienteDTO(veiculo.getCliente());
+    }
 
     public String getPlaca() {
         return placa;
@@ -135,11 +120,11 @@ public class Veiculo {
         this.status = status;
     }
 
-    public Cliente getCliente() {
+    public ClienteDTO getCliente() {
         return cliente;
     }
 
-    public void setCliente(Cliente cliente) {
+    public void setCliente(ClienteDTO cliente) {
         this.cliente = cliente;
     }
 

@@ -42,16 +42,16 @@ public class TokenService {
         try {
             String cleanToken = token.replace("Bearer ", "");
             Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
-            String email = JWT.require(algorithm)
+            String username = JWT.require(algorithm)
                     .withIssuer("login-api")
                     .build()
                     .verify(cleanToken)
                     .getSubject();
 
-            String tokenSalvo = tokens.getToken(email);
+            String tokenSalvo = tokens.getToken(username);
 
             if (tokenSalvo != null && tokenSalvo.equals(cleanToken)) {
-                return email;
+                return username;
             }
 
             throw new JWTVerificationException("Token não é mais válido ou foi revogado.");
@@ -61,7 +61,7 @@ public class TokenService {
         }
     }
 
-    public void revogarToken(String email) {
-        tokens.removerToken(email);
+    public void revogarToken(String username) {
+        tokens.removerToken(username);
     }
 }

@@ -1,5 +1,6 @@
 package com.fag.Autofinance.controllers;
 
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.security.core.Authentication;
@@ -23,11 +24,13 @@ import com.fag.Autofinance.security.TokenService;
 @RequestMapping("/auth")
 public class LoginController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
+    private final TokenService tokenService;
 
-    @Autowired
-    private TokenService tokenService;
+    public LoginController(AuthenticationManager authenticationManager, TokenService tokenService) {
+        this.authenticationManager = authenticationManager;
+        this.tokenService = tokenService;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
@@ -42,7 +45,6 @@ public class LoginController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String authHeader) {
-        // String token = extrairToken(authHeader);
         String email = tokenService.validarToken(authHeader);
         tokenService.revogarToken(email);
         return ResponseEntity.ok("Logout realizado com sucesso.");
@@ -51,8 +53,8 @@ public class LoginController {
     private Authentication autenticarUsuario(LoginRequest request) {
         return authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getSenha()));
+                        request.getUsername(),
+                        request.getPassword()));
     }
 
     private String gerarToken(Authentication authentication) {
@@ -60,9 +62,4 @@ public class LoginController {
         return tokenService.gerarToken(userDetails);
     }
 
-    /*
-     * private String extrairToken(String authHeader) {
-     * return authHeader.replace("Bearer ", "");
-     * }
-     */
 }

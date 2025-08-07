@@ -1,53 +1,36 @@
-package com.fag.Autofinance.entities;
+package com.fag.Autofinance.dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
-import org.hibernate.annotations.CreationTimestamp;
-
+import com.fag.Autofinance.entities.Cliente;
 import com.fag.Autofinance.enums.StatusCadastros;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+public class ClienteDTO {
 
-@Entity
-public class Cliente {
-
-    @Id
-    @Column(name = "cpf_cnpj", nullable = false, length = 14)
     private String cpfCnpj;
-
-    @NotEmpty
-    @Size(min = 2, max = 100)
     private String nome;
-
-    @Email
     private String email;
-
-    @NotBlank
-    @Pattern(regexp = "^(\\+\\d{1,2}\\s?)?\\(?\\d{2}\\)?\\s?\\d{4,5}-?\\d{4}$", message = "Formato de celular inválido")
     private String celular;
-
-    private LocalDate dataNascimento;
-
     private String endereco;
-
     private String cep;
-
     private String observacoes;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private StatusCadastros status = StatusCadastros.ATIVO;
-
-    @CreationTimestamp
-    @Column(name = "data_cadastro", updatable = false, nullable = false)
+    private LocalDate dataNascimento;
     private LocalDateTime dataCadastro;
+    private StatusCadastros status;
 
-    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Veiculo> veiculos = new HashSet<>();
+    public ClienteDTO(Cliente cliente) {
+        this.cpfCnpj = cliente.getCpfCnpj();
+        this.nome = cliente.getNome();
+        this.email = cliente.getEmail();
+        this.celular = cliente.getCelular();
+        this.endereco = cliente.getEndereco();
+        this.cep = cliente.getCep();
+        this.observacoes = cliente.getObservacoes();
+        this.dataNascimento = cliente.getDataNascimento();
+        this.dataCadastro = cliente.getDataCadastro();
+        this.status = cliente.getStatus();
+    }
 
     public String getCpfCnpj() {
         return cpfCnpj;
@@ -81,14 +64,6 @@ public class Cliente {
         this.celular = celular;
     }
 
-    public LocalDate getDataNascimento() {
-        return dataNascimento;
-    }
-
-    public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
-    }
-
     public String getEndereco() {
         return endereco;
     }
@@ -113,12 +88,12 @@ public class Cliente {
         this.observacoes = observacoes;
     }
 
-    public StatusCadastros getStatus() {
-        return status;
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
     }
 
-    public void setStatus(StatusCadastros status) {
-        this.status = status;
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
     }
 
     public LocalDateTime getDataCadastro() {
@@ -129,12 +104,12 @@ public class Cliente {
         this.dataCadastro = dataCadastro;
     }
 
-    public Set<Veiculo> getVeiculos() {
-        return veiculos;
+    public StatusCadastros getStatus() {
+        return status;
     }
 
-    public void setVeiculos(Set<Veiculo> veiculos) {
-        this.veiculos = veiculos;
+    public void setStatus(StatusCadastros status) {
+        this.status = status;
     }
 
 }
