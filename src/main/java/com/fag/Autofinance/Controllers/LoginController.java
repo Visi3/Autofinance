@@ -53,8 +53,8 @@ public class LoginController {
     private Authentication autenticarUsuario(LoginRequest request) {
         return authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getSenha()));
+                        request.getUsername(),
+                        request.getPassword()));
     }
 
     private String gerarToken(Authentication authentication) {
