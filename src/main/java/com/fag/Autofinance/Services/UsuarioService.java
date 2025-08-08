@@ -1,11 +1,15 @@
 package com.fag.Autofinance.services;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.fag.Autofinance.dto.UsuariosDTO;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.exception.NaoEncontradoException;
@@ -22,17 +26,24 @@ public class UsuarioService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<Usuarios> listarTodos() {
-        return usuarioRepository.findAll();
+    public List<UsuariosDTO> listarTodos() {
+        return usuarioRepository.findAll()
+                .stream()
+                .map(UsuariosDTO::new)
+                .collect(Collectors.toList());
     }
 
-    public List<Usuarios> listarPorStatus(StatusCadastros status) {
-        return usuarioRepository.findByStatus(status);
+    public List<UsuariosDTO> listarPorStatus(StatusCadastros status) {
+        return usuarioRepository.findByStatus(status)
+                .stream()
+                .map(UsuariosDTO::new)
+                .collect(Collectors.toList());
     }
 
-    public Usuarios listarPorUsername(String username) {
-        return usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    public UsuariosDTO listarPorUsername(String username) {
+        Usuarios usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
+        return new UsuariosDTO(usuario);
     }
 
     public Usuarios criar(Usuarios usuario) {
