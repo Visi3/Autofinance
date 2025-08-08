@@ -2,6 +2,7 @@ package com.fag.Autofinance.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,10 +30,18 @@ public class ConfigSecurity {
                                 .csrf().disable()
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/auth/login").permitAll()
+
+                                                .requestMatchers(HttpMethod.POST, "/usuarios").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, "/usuarios/**").hasRole("ADMIN")
+
+                                                .requestMatchers(HttpMethod.GET, "/usuarios/**")
+                                                .hasAnyRole("ADMIN", "MECANICO")
+
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);
+
                 return http.build();
 
         }
