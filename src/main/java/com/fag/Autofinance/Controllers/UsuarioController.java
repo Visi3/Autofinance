@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fag.Autofinance.dto.LoginRequest;
+import com.fag.Autofinance.dto.UsuariosDTO;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.services.UsuarioService;
@@ -33,25 +35,25 @@ public class UsuarioController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MECANICO')")
-    public List<Usuarios> listarTodos() {
+    public List<UsuariosDTO> listarTodos() {
         return usuarioService.listarTodos();
     }
 
     @GetMapping("/ativos")
     @PreAuthorize("hasAnyRole('ADMIN', 'MECANICO')")
-    public List<Usuarios> listarAtivos() {
+    public List<UsuariosDTO> listarAtivos() {
         return usuarioService.listarPorStatus(StatusCadastros.ATIVO);
     }
 
     @GetMapping("/inativos")
     @PreAuthorize("hasAnyRole('ADMIN', 'MECANICO')")
-    public List<Usuarios> listarInativos() {
+    public List<UsuariosDTO> listarInativos() {
         return usuarioService.listarPorStatus(StatusCadastros.INATIVO);
     }
 
     @GetMapping("/{username}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MECANICO')")
-    public ResponseEntity<Usuarios> listarPorUsername(@PathVariable String username) {
+    public ResponseEntity<UsuariosDTO> listarPorUsername(@PathVariable String username) {
         return ResponseEntity.ok(usuarioService.listarPorUsername(username));
     }
 
@@ -72,14 +74,15 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody String email, @RequestBody String senha) {
+    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
         try {
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, senha);
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(), loginRequest.getPassword());
 
             authenticationManager.authenticate(authToken);
             return ResponseEntity.ok("Login realizado com sucesso!");
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha inválidos!");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usúario ou senha inválidos!");
         }
     }
 
