@@ -1,6 +1,5 @@
 package com.fag.Autofinance.entities;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -32,7 +31,6 @@ public class Orcamento {
     @ManyToOne(optional = false)
     private Servico servico;
 
-    @Column(nullable = false)
     private Double valorAjustado;
 
     @ManyToOne(optional = false)
