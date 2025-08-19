@@ -17,15 +17,18 @@ public class OrcamentoDTO {
     private StatusCadastros status;
     private LocalDateTime dataCriacao;
 
-    public OrcamentoDTO(Orcamento orcamento) {
-        this.id = orcamento.getId();
-        this.cpfCnpj = orcamento.getCliente().getCpfCnpj();
-        this.veiculoPlaca = orcamento.getVeiculo().getPlaca();
-        this.servicoNome = orcamento.getServico().getNome();
-        this.mecanicoUsername = orcamento.getMecanico().getUsername();
-        this.valorAjustado = orcamento.getValorAjustado();
-        this.status = orcamento.getStatus();
-        this.dataCriacao = orcamento.getDataCadastro();
+    public OrcamentoDTO(Orcamento salvo) {
+        this.id = salvo.getId();
+        this.cpfCnpj = salvo.getCliente().getCpfCnpj();
+        this.veiculoPlaca = salvo.getVeiculo().getPlaca();
+        this.servicoNome = salvo.getServico().getNome();
+        this.mecanicoUsername = salvo.getMecanico().getUsername();
+        this.valorAjustado = salvo.getValorAjustado();
+        this.status = salvo.getStatus();
+        this.dataCriacao = salvo.getDataCadastro();
+    }
+
+    public OrcamentoDTO() {
     }
 
     public Long getId() {

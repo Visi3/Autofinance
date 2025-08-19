@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +17,7 @@ import com.fag.Autofinance.entities.Orcamento;
 import com.fag.Autofinance.services.OrcamentoService;
 
 @RestController
-@RequestMapping()
+@RequestMapping("/orcamentos")
 public class OrcamentoController {
     private final OrcamentoService orcamentoService;
 
@@ -25,10 +26,19 @@ public class OrcamentoController {
     }
 
     @PostMapping
-    public ResponseEntity<Orcamento> criarOrcamento(
+    public ResponseEntity<OrcamentoDTO> criarOrcamento(
             @RequestBody Orcamento orcamento,
             Authentication authentication) {
-        return ResponseEntity.ok(orcamentoService.criarOrcamento(orcamento, authentication.getName()));
+        OrcamentoDTO salvo = orcamentoService.criarOrcamento(orcamento, authentication.getName());
+        return ResponseEntity.ok(salvo);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<OrcamentoDTO> atualizarOrcamento(
+            @PathVariable Long id,
+            @RequestBody OrcamentoDTO orcamentoDTO) {
+        OrcamentoDTO atualizado = orcamentoService.atualizarOrcamento(id, orcamentoDTO);
+        return ResponseEntity.ok(atualizado);
     }
 
     @GetMapping
