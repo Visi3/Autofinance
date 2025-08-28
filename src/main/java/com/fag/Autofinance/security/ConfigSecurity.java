@@ -37,7 +37,8 @@ public class ConfigSecurity {
                                 .cors()
                                 .and()
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/auth/login").permitAll()
+                                                .requestMatchers("/auth/**").permitAll()
+                                                .requestMatchers("/empresas/**").permitAll()
 
                                                 .requestMatchers(HttpMethod.POST, "/usuarios").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.PUT, "/usuarios/**").hasRole("ADMIN")

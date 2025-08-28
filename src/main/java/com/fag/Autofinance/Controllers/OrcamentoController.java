@@ -26,10 +26,8 @@ public class OrcamentoController {
     }
 
     @PostMapping
-    public ResponseEntity<OrcamentoDTO> criarOrcamento(
-            @RequestBody Orcamento orcamento,
-            Authentication authentication) {
-        OrcamentoDTO salvo = orcamentoService.criarOrcamento(orcamento, authentication.getName());
+    public ResponseEntity<OrcamentoDTO> criarOrcamento(@RequestBody Orcamento orcamento) {
+        OrcamentoDTO salvo = orcamentoService.criarOrcamento(orcamento);
         return ResponseEntity.ok(salvo);
     }
 

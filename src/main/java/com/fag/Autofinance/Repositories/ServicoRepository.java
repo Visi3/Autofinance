@@ -11,8 +11,12 @@ import com.fag.Autofinance.enums.StatusCadastros;
 
 public interface ServicoRepository extends JpaRepository<Servico, Long> {
 
-    Page<Servico> findByStatus(StatusCadastros status, Pageable pageable);
+    Page<Servico> findByStatusAndEmpresaId(StatusCadastros status, Long empresaId, Pageable pageable);
 
-    Optional<Servico> findByNomeContainingIgnoreCase(String nome);
+    Optional<Servico> findByNomeContainingIgnoreCaseAndEmpresaId(String nome, Long empresaId);
+
+    Page<Servico> findAllByEmpresaId(Long empresaId, Pageable pageable);
+
+    Optional<Servico> findByIdAndEmpresaId(Long id, Long empresaId);
 
 }

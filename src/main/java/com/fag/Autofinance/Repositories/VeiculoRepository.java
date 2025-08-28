@@ -11,11 +11,15 @@ import com.fag.Autofinance.entities.Veiculo;
 import com.fag.Autofinance.enums.StatusCadastros;
 
 public interface VeiculoRepository extends JpaRepository<Veiculo, String> {
-    Page<Veiculo> findByStatus(StatusCadastros status, Pageable pageable);
+    Page<Veiculo> findByStatusAndEmpresaId(StatusCadastros status, Long empresaId, Pageable pageable);
 
-    Page<Veiculo> findByCliente_CpfCnpj(String cpfCnpj, Pageable pageable);
+    Page<Veiculo> findByCliente_CpfCnpjAndEmpresaId(String cpfCnpj, Long empresaId, Pageable pageable);
 
-    Page<Veiculo> findByCliente_NomeContainingIgnoreCase(String nome, Pageable pageable);
+    Page<Veiculo> findByCliente_NomeContainingIgnoreCaseAndEmpresaId(String nome, Long empresaId, Pageable pageable);
 
-    Optional<Veiculo> findByPlaca(String placa);
+    Optional<Veiculo> findByPlacaAndEmpresaId(String placa, Long empresaId);
+
+    boolean existsByPlacaAndEmpresaId(String placa, Long empresaId);
+
+    Page<Veiculo> findAllByEmpresaId(Long empresaId, Pageable pageable);
 }

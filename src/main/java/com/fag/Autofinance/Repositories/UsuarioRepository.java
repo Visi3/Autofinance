@@ -8,7 +8,14 @@ import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 
 public interface UsuarioRepository extends JpaRepository<Usuarios, Long> {
+
+    Optional<Usuarios> findByUsernameAndEmpresaId(String username, Long empresaId);
+
     Optional<Usuarios> findByUsername(String username);
 
-    List<Usuarios> findByStatus(StatusCadastros status);
+    List<Usuarios> findByStatusAndEmpresaId(StatusCadastros status, Long empreaId);
+
+    List<Usuarios> findAllByEmpresaId(Long empresaId);
+
+    Optional<Usuarios> findByEmail(String email);
 }
