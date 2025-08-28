@@ -6,9 +6,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.GeneratedValue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 
 @Entity
 public class Servico {
@@ -31,6 +34,10 @@ public class Servico {
     private Integer mesesRetornoPadrao;
 
     private String mensagemRetornoPadrao;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
     @Enumerated(EnumType.STRING)
     private StatusCadastros status = StatusCadastros.ATIVO;
@@ -105,6 +112,14 @@ public class Servico {
 
     public void setStatus(StatusCadastros status) {
         this.status = status;
+    }
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
     }
 
 }

@@ -6,20 +6,25 @@ import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 
 public class UsuariosDTO {
+
+    private Long id;
     private String username;
     private String email;
     private String telefone;
     private String role;
     private StatusCadastros status;
     private LocalDateTime dataCadastro;
+    private String empresaNome;
 
     public UsuariosDTO(Usuarios usuario) {
+        this.id = usuario.getId();
         this.username = usuario.getUsername();
         this.email = usuario.getEmail();
         this.telefone = usuario.getTelefone();
         this.role = usuario.getRole().name();
         this.status = usuario.getStatus();
         this.dataCadastro = usuario.getDataCadastro();
+        this.empresaNome = usuario.getEmpresa().getNome();
     }
 
     public String getUsername() {
@@ -68,6 +73,14 @@ public class UsuariosDTO {
 
     public void setDataCadastro(LocalDateTime dataCadastro) {
         this.dataCadastro = dataCadastro;
+    }
+
+    public String getEmpresaNome() {
+        return empresaNome;
+    }
+
+    public void setEmpresaNome(String empresaNome) {
+        this.empresaNome = empresaNome;
     }
 
 }

@@ -9,9 +9,11 @@ import com.fag.Autofinance.entities.Cliente;
 import com.fag.Autofinance.enums.StatusCadastros;
 
 public interface ClienteRepository extends JpaRepository<Cliente, String> {
-    Optional<Cliente> findByCpfCnpj(String cpfCnpj);
+    List<Cliente> findAllByEmpresaId(Long empresaId);
 
-    boolean existsByCpfCnpj(String cpfCnpj);
+    Optional<Cliente> findByCpfCnpjAndEmpresaId(String cpfCnpj, Long empresaId);
 
-    List<Cliente> findByStatus(StatusCadastros status);
+    List<Cliente> findByStatusAndEmpresaId(StatusCadastros status, Long empresaId);
+
+    boolean existsByCpfCnpjAndEmpresaId(String cpfCnpj, Long empresaId);
 }

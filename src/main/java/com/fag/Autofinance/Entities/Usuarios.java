@@ -21,13 +21,21 @@ import com.fag.Autofinance.enums.StatusCadastros;
 @Entity
 @Getter
 @Setter
+@Table(name = "usuarios", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "empresa_id", "username" })
+})
 public class Usuarios implements UserDetails {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @NotBlank
     @Size(min = 3, max = 20)
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String username;
+
+    private String nome;
 
     @Email
     private String email;
@@ -36,6 +44,10 @@ public class Usuarios implements UserDetails {
 
     @NotBlank
     private String password;
+
+    @ManyToOne
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
     @CreationTimestamp
     @Column(name = "data_cadastro", updatable = false, nullable = false)

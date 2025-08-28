@@ -38,6 +38,10 @@ public class Cliente {
 
     private String observacoes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusCadastros status = StatusCadastros.ATIVO;
@@ -135,6 +139,14 @@ public class Cliente {
 
     public void setVeiculos(Set<Veiculo> veiculos) {
         this.veiculos = veiculos;
+    }
+
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+
+    public void setEmpresa(Empresa empresa) {
+        this.empresa = empresa;
     }
 
 }

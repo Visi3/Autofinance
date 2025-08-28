@@ -3,6 +3,7 @@ package com.fag.Autofinance.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,33 +27,49 @@ public class UsuarioService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    private Usuarios getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
+    }
+
     public List<UsuariosDTO> listarTodos() {
-        return usuarioRepository.findAll()
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        return usuarioRepository.findAllByEmpresaId(empresaId)
                 .stream()
                 .map(UsuariosDTO::new)
                 .collect(Collectors.toList());
     }
 
     public List<UsuariosDTO> listarPorStatus(StatusCadastros status) {
-        return usuarioRepository.findByStatus(status)
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        return usuarioRepository.findByStatusAndEmpresaId(status, empresaId)
                 .stream()
                 .map(UsuariosDTO::new)
                 .collect(Collectors.toList());
     }
 
     public UsuariosDTO listarPorUsername(String username) {
-        Usuarios usuario = usuarioRepository.findByUsername(username)
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        Usuarios usuario = usuarioRepository.findByUsernameAndEmpresaId(username, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
         return new UsuariosDTO(usuario);
     }
 
-    public Usuarios criar(Usuarios usuario) {
-        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        return usuarioRepository.save(usuario);
+    public Usuarios criar(Usuarios usuarioNovo) {
+        Usuarios usuarioLogado = getUsuarioLogado();
+
+        usuarioNovo.setEmpresa(usuarioLogado.getEmpresa());
+        usuarioNovo.setPassword(passwordEncoder.encode(usuarioNovo.getPassword()));
+        usuarioNovo.setStatus(StatusCadastros.ATIVO);
+
+        return usuarioRepository.save(usuarioNovo);
     }
 
     public Usuarios atualizar(String username, Usuarios usuarioAtualizado) {
-        Usuarios usuarioExistente = usuarioRepository.findByUsername(username)
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+
+        Usuarios usuarioExistente = usuarioRepository.findByUsernameAndEmpresaId(username, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
 
         usuarioExistente.setEmail(usuarioAtualizado.getEmail());
@@ -69,6 +86,6 @@ public class UsuarioService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return usuarioRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+                .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
     }
 }

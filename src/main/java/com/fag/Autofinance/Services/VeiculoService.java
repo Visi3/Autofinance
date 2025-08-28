@@ -4,16 +4,18 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.fag.Autofinance.dto.VeiculoDTO;
 import com.fag.Autofinance.entities.Cliente;
+import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.entities.Veiculo;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.ClienteRepository;
+import com.fag.Autofinance.repositories.UsuarioRepository;
 import com.fag.Autofinance.repositories.VeiculoRepository;
 
 @Service
@@ -23,40 +25,56 @@ public class VeiculoService {
 
     private final ClienteRepository clienteRepository;
 
-    public VeiculoService(VeiculoRepository veiculoRepository, ClienteRepository clienteRepository) {
+    private final UsuarioRepository usuarioRepository;
+
+    public VeiculoService(VeiculoRepository veiculoRepository, ClienteRepository clienteRepository,
+            UsuarioRepository usuarioRepository) {
         this.veiculoRepository = veiculoRepository;
         this.clienteRepository = clienteRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
-    public Page<VeiculoDTO> listarTodos(Pageable pageable) {
-        return veiculoRepository.findAll(pageable)
-                .map(VeiculoDTO::new);
-    }
-
-    public Page<VeiculoDTO> listarPorStatus(StatusCadastros status, Pageable pageable) {
-        return veiculoRepository.findByStatus(status, pageable)
-                .map(VeiculoDTO::new);
+    private Usuarios getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
     }
 
     public Page<VeiculoDTO> listarPorCpfCnpj(String cpfCnpj, Pageable pageable) {
-        return veiculoRepository.findByCliente_CpfCnpj(cpfCnpj, pageable)
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        return veiculoRepository.findByCliente_CpfCnpjAndEmpresaId(cpfCnpj, empresaId, pageable)
                 .map(VeiculoDTO::new);
     }
 
     public Page<VeiculoDTO> listarPorNome(String nome, Pageable pageable) {
-        return veiculoRepository.findByCliente_NomeContainingIgnoreCase(nome, pageable)
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        return veiculoRepository.findByCliente_NomeContainingIgnoreCaseAndEmpresaId(nome, empresaId, pageable)
+                .map(VeiculoDTO::new);
+    }
+
+    public Page<VeiculoDTO> listarTodos(Pageable pageable) {
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        return veiculoRepository.findAllByEmpresaId(empresaId, pageable)
+                .map(VeiculoDTO::new);
+    }
+
+    public Page<VeiculoDTO> listarPorStatus(StatusCadastros status, Pageable pageable) {
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        return veiculoRepository.findByStatusAndEmpresaId(status, empresaId, pageable)
                 .map(VeiculoDTO::new);
     }
 
     public VeiculoDTO listarPorPlaca(String placa) {
-        Veiculo veiculo = veiculoRepository.findByPlaca(placa)
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        Veiculo veiculo = veiculoRepository.findByPlacaAndEmpresaId(placa, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado com essa placa."));
         return new VeiculoDTO(veiculo);
     }
 
     public Veiculo criar(Veiculo veiculo) {
+        Usuarios usuarioLogado = getUsuarioLogado();
 
-        if (veiculoRepository.findByPlaca(veiculo.getPlaca()).isPresent()) {
+        if (veiculoRepository.existsByPlacaAndEmpresaId(veiculo.getPlaca(), usuarioLogado.getEmpresa().getId())) {
             throw new JaExisteException("Veículo com essa placa já está cadastrado.");
         }
 
@@ -64,19 +82,27 @@ public class VeiculoService {
             throw new IllegalArgumentException("Cliente com CPF/CNPJ é obrigatório.");
         }
 
-        Cliente cliente = clienteRepository.findById(veiculo.getCliente().getCpfCnpj())
+        Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(
+                veiculo.getCliente().getCpfCnpj(),
+                usuarioLogado.getEmpresa().getId())
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado com CPF/CNPJ informado."));
 
         veiculo.setCliente(cliente);
+        veiculo.setEmpresa(usuarioLogado.getEmpresa());
+        veiculo.setStatus(StatusCadastros.ATIVO);
 
         return veiculoRepository.save(veiculo);
     }
 
     public Veiculo atualizar(String placa, Veiculo veiculoAtualizado) {
-        Veiculo existente = veiculoRepository.findByPlaca(placa)
-                .orElseThrow(() -> new NaoEncontradoException("Veículo com a placa " + placa + " não encontrado."));
+        Long empresaId = getUsuarioLogado().getEmpresa().getId();
 
-        clienteRepository.findById(veiculoAtualizado.getCliente().getCpfCnpj())
+        Veiculo existente = veiculoRepository.findByPlacaAndEmpresaId(placa, empresaId)
+                .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado com essa placa."));
+
+        Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(
+                veiculoAtualizado.getCliente().getCpfCnpj(),
+                empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado com CPF/CNPJ informado."));
 
         existente.setModelo(veiculoAtualizado.getModelo());
@@ -89,7 +115,7 @@ public class VeiculoService {
         existente.setQuilometragem(veiculoAtualizado.getQuilometragem());
         existente.setObservacoes(veiculoAtualizado.getObservacoes());
         existente.setStatus(veiculoAtualizado.getStatus());
-        existente.setCliente(veiculoAtualizado.getCliente());
+        existente.setCliente(cliente);
 
         return veiculoRepository.save(existente);
     }
