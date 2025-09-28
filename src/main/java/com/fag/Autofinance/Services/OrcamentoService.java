@@ -1,9 +1,10 @@
 package com.fag.Autofinance.services;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,9 @@ import com.fag.Autofinance.entities.Orcamento;
 import com.fag.Autofinance.entities.Servico;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.entities.Veiculo;
-import com.fag.Autofinance.enums.StatusCadastros;
+
+import com.fag.Autofinance.enums.StatusOrcamento;
+
 import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.ClienteRepository;
 import com.fag.Autofinance.repositories.OrcamentoRepository;
@@ -52,17 +55,19 @@ public class OrcamentoService {
                                 .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
         }
 
-        public OrcamentoDTO atualizarOrcamento(Long id, OrcamentoDTO orcamentoDTO) {
+        public OrcamentoDTO atualizarOrcamento(Long numero, OrcamentoDTO orcamentoDTO) {
 
                 Usuarios mecanico = getUsuarioLogado();
-                Long empresaId = mecanico.getEmpresa().getId();
+                UUID empresaId = mecanico.getEmpresa().getId();
 
-                Orcamento orcamento = orcamentoRepository.findByIdAndEmpresaId(id, empresaId)
+                Orcamento orcamento = orcamentoRepository.findByNumeroAndEmpresaId(numero, empresaId)
                                 .orElseThrow(() -> new NaoEncontradoException(
                                                 "Orçamento não encontrado nesta empresa"));
 
-                boolean mudouInativo = orcamentoDTO.getStatus() == StatusCadastros.INATIVO
-                                && orcamento.getStatus() != StatusCadastros.INATIVO;
+                if (orcamentoDTO.getStatus() == StatusOrcamento.GERADO) {
+                        throw new IllegalArgumentException(
+                                        "O status GERADO só pode ser definido ao criar uma Ordem de Serviço.");
+                }
 
                 Servico servico = servicoRepository.findByNomeContainingIgnoreCaseAndEmpresaId(
                                 orcamentoDTO.getServicoNome(),
@@ -73,27 +78,7 @@ public class OrcamentoService {
                 orcamento.setValorAjustado(orcamentoDTO.getValorAjustado());
                 orcamento.setStatus(orcamentoDTO.getStatus());
 
-                orcamento = orcamentoRepository.save(orcamento);
-
-                if (mudouInativo) {
-                        String numeroCliente = orcamento.getCliente().getCelular();
-                        whatsAppService.enviarMensagem(numeroCliente, "Seu orçamento foi concluído!");
-
-                        if (orcamento.getServico() != null && orcamento.getServico().getMesesRetornoPadrao() != null) {
-                                int minutos = orcamento.getServico().getMesesRetornoPadrao();
-                                String msgRetorno = orcamento.getServico().getMensagemRetornoPadrao();
-
-                                Timer timer = new Timer();
-                                timer.schedule(new TimerTask() {
-                                        @Override
-                                        public void run() {
-                                                whatsAppService.enviarMensagem(numeroCliente, msgRetorno);
-                                        }
-                                }, minutos * 60 * 1000L);
-                        }
-                }
-
-                return new OrcamentoDTO(orcamento);
+                return new OrcamentoDTO(orcamentoRepository.save(orcamento));
         }
 
         public OrcamentoDTO criarOrcamento(Orcamento orcamento) {
@@ -121,45 +106,63 @@ public class OrcamentoService {
                                 .orElseThrow(() -> new NaoEncontradoException("Serviço não encontrado nesta empresa"));
                 orcamento.setServico(servico);
 
+                Long proximoNumero = orcamentoRepository.findTopByEmpresaIdOrderByNumeroDesc(empresa.getId())
+                                .map(o -> o.getNumero() + 1)
+                                .orElse(1L);
+                orcamento.setNumero(proximoNumero);
+
                 Orcamento salvo = orcamentoRepository.save(orcamento);
 
                 String celularCliente = salvo.getCliente().getCelular();
-                String mensagem = String.format(
-                                "Olá %s! Seu orçamento foi criado:\n" +
-                                                "- Valor: R$ %.2f\n" +
-                                                "- Mecânico: %s\n" +
-                                                "- Veículo: %s\n" +
-                                                "- Serviço: %s",
-                                salvo.getCliente().getNome(),
-                                salvo.getValorAjustado(),
-                                salvo.getMecanico().getUsername(),
-                                salvo.getVeiculo().getModelo(),
-                                salvo.getServico().getNome());
-                whatsAppService.enviarMensagem(celularCliente, mensagem);
+
+                /*
+                 * try {
+                 * String mensagem = String.format(
+                 * "Olá %s! Seu orçamento foi criado:\n" +
+                 * "- Código: %d\n" +
+                 * "- Valor: R$ %.2f\n" +
+                 * "- Mecânico: %s\n" +
+                 * "- Veículo: %s\n" +
+                 * "- Serviço: %s",
+                 * salvo.getCliente().getNome(),
+                 * salvo.getNumero(),
+                 * salvo.getValorAjustado(),
+                 * salvo.getMecanico().getUsername(),
+                 * salvo.getVeiculo().getModelo(),
+                 * salvo.getServico().getNome());
+                 * whatsAppService.enviarMensagem(celularCliente, mensagem);
+                 * } catch (EnviarException e) {
+                 * 
+                 * System.err.println("Erro ao enviar mensagem: " + e.getMessage());
+                 * 
+                 * throw new
+                 * RuntimeException("Não foi possível enviar a mensagem pelo WhatsApp", e);
+                 * }
+                 */
 
                 return new OrcamentoDTO(salvo);
         }
 
-        public List<OrcamentoDTO> listarTodos() {
-                Long empresaId = getUsuarioLogado().getEmpresa().getId();
-                return orcamentoRepository.findAllByEmpresaId(empresaId)
-                                .stream()
-                                .map(OrcamentoDTO::new)
-                                .toList();
+        public Page<OrcamentoDTO> listarTodos(Pageable pageable) {
+                Usuarios mecanico = getUsuarioLogado();
+                UUID empresaId = mecanico.getEmpresa().getId();
+
+                return orcamentoRepository.findByEmpresaId(empresaId, pageable)
+                                .map(OrcamentoDTO::new);
         }
 
         public List<OrcamentoDTO> listarPorMecanico(String username) {
-                Long empresaId = getUsuarioLogado().getEmpresa().getId();
+                UUID empresaId = getUsuarioLogado().getEmpresa().getId();
                 return orcamentoRepository.findByMecanicoUsernameAndEmpresaId(username, empresaId)
                                 .stream()
                                 .map(OrcamentoDTO::new)
                                 .toList();
         }
 
-        public OrcamentoDTO listarPorId(Long id) {
-                Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        public OrcamentoDTO listarPorId(Long numero) {
+                UUID empresaId = getUsuarioLogado().getEmpresa().getId();
                 Orcamento orcamento = orcamentoRepository
-                                .findByIdAndEmpresaId(id, empresaId)
+                                .findByNumeroAndEmpresaId(numero, empresaId)
                                 .orElseThrow(() -> new NaoEncontradoException("Orçamento não encontrado"));
                 return new OrcamentoDTO(orcamento);
         }

@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.fag.Autofinance.enums.StatusCadastros;
+import com.fag.Autofinance.enums.StatusOrcamento;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,6 +24,9 @@ public class Orcamento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
+    private Long numero;
+
     @ManyToOne(optional = false)
     private Cliente cliente;
 
@@ -39,7 +42,8 @@ public class Orcamento {
     private Usuarios mecanico;
 
     @Enumerated(EnumType.STRING)
-    private StatusCadastros status;
+    @Column(nullable = false)
+    private StatusOrcamento status;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
@@ -55,6 +59,14 @@ public class Orcamento {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getNumero() {
+        return numero;
+    }
+
+    public void setNumero(Long numero) {
+        this.numero = numero;
     }
 
     public Cliente getCliente() {
@@ -97,20 +109,12 @@ public class Orcamento {
         this.mecanico = mecanico;
     }
 
-    public StatusCadastros getStatus() {
+    public StatusOrcamento getStatus() {
         return status;
     }
 
-    public void setStatus(StatusCadastros status) {
+    public void setStatus(StatusOrcamento status) {
         this.status = status;
-    }
-
-    public LocalDateTime getDataCadastro() {
-        return dataCadastro;
-    }
-
-    public void setDataCadastro(LocalDateTime dataCadastro) {
-        this.dataCadastro = dataCadastro;
     }
 
     public Empresa getEmpresa() {
@@ -119,6 +123,14 @@ public class Orcamento {
 
     public void setEmpresa(Empresa empresa) {
         this.empresa = empresa;
+    }
+
+    public LocalDateTime getDataCadastro() {
+        return dataCadastro;
+    }
+
+    public void setDataCadastro(LocalDateTime dataCadastro) {
+        this.dataCadastro = dataCadastro;
     }
 
 }

@@ -1,13 +1,14 @@
 package com.fag.Autofinance.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 
 public class UsuariosDTO {
 
-    private Long id;
+    private UUID id;
     private String username;
     private String email;
     private String telefone;

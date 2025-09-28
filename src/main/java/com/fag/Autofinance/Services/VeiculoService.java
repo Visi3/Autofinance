@@ -1,6 +1,7 @@
 package com.fag.Autofinance.services;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,31 +42,31 @@ public class VeiculoService {
     }
 
     public Page<VeiculoDTO> listarPorCpfCnpj(String cpfCnpj, Pageable pageable) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return veiculoRepository.findByCliente_CpfCnpjAndEmpresaId(cpfCnpj, empresaId, pageable)
                 .map(VeiculoDTO::new);
     }
 
     public Page<VeiculoDTO> listarPorNome(String nome, Pageable pageable) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return veiculoRepository.findByCliente_NomeContainingIgnoreCaseAndEmpresaId(nome, empresaId, pageable)
                 .map(VeiculoDTO::new);
     }
 
     public Page<VeiculoDTO> listarTodos(Pageable pageable) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return veiculoRepository.findAllByEmpresaId(empresaId, pageable)
                 .map(VeiculoDTO::new);
     }
 
     public Page<VeiculoDTO> listarPorStatus(StatusCadastros status, Pageable pageable) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return veiculoRepository.findByStatusAndEmpresaId(status, empresaId, pageable)
                 .map(VeiculoDTO::new);
     }
 
     public VeiculoDTO listarPorPlaca(String placa) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         Veiculo veiculo = veiculoRepository.findByPlacaAndEmpresaId(placa, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado com essa placa."));
         return new VeiculoDTO(veiculo);
@@ -95,7 +96,7 @@ public class VeiculoService {
     }
 
     public Veiculo atualizar(String placa, Veiculo veiculoAtualizado) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
 
         Veiculo existente = veiculoRepository.findByPlacaAndEmpresaId(placa, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado com essa placa."));

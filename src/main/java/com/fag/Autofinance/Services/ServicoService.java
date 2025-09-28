@@ -1,5 +1,7 @@
 package com.fag.Autofinance.services;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,13 +35,13 @@ public class ServicoService {
     }
 
     public Page<ServicoDTO> listarTodos(Pageable pageable) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return servicoRepository.findAllByEmpresaId(empresaId, pageable)
                 .map(ServicoDTO::new);
     }
 
     public Page<ServicoDTO> listarPorStatus(StatusCadastros status, Pageable pageable) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return servicoRepository.findByStatusAndEmpresaId(status, empresaId, pageable)
                 .map(ServicoDTO::new);
     }
@@ -62,7 +64,7 @@ public class ServicoService {
     }
 
     public Servico atualizar(Long id, Servico servicoAtualizado) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
 
         Servico servicoExistente = servicoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Serviço não encontrado"));

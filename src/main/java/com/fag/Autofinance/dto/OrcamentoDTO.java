@@ -1,24 +1,24 @@
 package com.fag.Autofinance.dto;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.fag.Autofinance.entities.Orcamento;
-import com.fag.Autofinance.enums.StatusCadastros;
+
+import com.fag.Autofinance.enums.StatusOrcamento;
 
 public class OrcamentoDTO {
 
-    private Long id;
+    private Long numeroOrcamento;
     private String cpfCnpj;
     private String veiculoPlaca;
     private String servicoNome;
     private String mecanicoUsername;
     private Double valorAjustado;
-    private StatusCadastros status;
+    private StatusOrcamento status;
     private LocalDateTime dataCriacao;
 
     public OrcamentoDTO(Orcamento salvo) {
-        this.id = salvo.getId();
+        this.numeroOrcamento = salvo.getNumero();
         this.cpfCnpj = salvo.getCliente().getCpfCnpj();
         this.veiculoPlaca = salvo.getVeiculo().getPlaca();
         this.servicoNome = salvo.getServico().getNome();
@@ -31,12 +31,12 @@ public class OrcamentoDTO {
     public OrcamentoDTO() {
     }
 
-    public Long getId() {
-        return id;
+    public Long getNumeroOrcamento() {
+        return numeroOrcamento;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setNumeroOrcamento(Long numeroOrcamento) {
+        this.numeroOrcamento = numeroOrcamento;
     }
 
     public String getCpfCnpj() {
@@ -79,11 +79,11 @@ public class OrcamentoDTO {
         this.valorAjustado = valorAjustado;
     }
 
-    public StatusCadastros getStatus() {
+    public StatusOrcamento getStatus() {
         return status;
     }
 
-    public void setStatus(StatusCadastros status) {
+    public void setStatus(StatusOrcamento status) {
         this.status = status;
     }
 

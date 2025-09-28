@@ -1,6 +1,7 @@
 package com.fag.Autofinance.services;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,7 +35,7 @@ public class UsuarioService implements UserDetailsService {
     }
 
     public List<UsuariosDTO> listarTodos() {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return usuarioRepository.findAllByEmpresaId(empresaId)
                 .stream()
                 .map(UsuariosDTO::new)
@@ -42,7 +43,7 @@ public class UsuarioService implements UserDetailsService {
     }
 
     public List<UsuariosDTO> listarPorStatus(StatusCadastros status) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return usuarioRepository.findByStatusAndEmpresaId(status, empresaId)
                 .stream()
                 .map(UsuariosDTO::new)
@@ -50,7 +51,7 @@ public class UsuarioService implements UserDetailsService {
     }
 
     public UsuariosDTO listarPorUsername(String username) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         Usuarios usuario = usuarioRepository.findByUsernameAndEmpresaId(username, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
         return new UsuariosDTO(usuario);
@@ -67,7 +68,7 @@ public class UsuarioService implements UserDetailsService {
     }
 
     public Usuarios atualizar(String username, Usuarios usuarioAtualizado) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
 
         Usuarios usuarioExistente = usuarioRepository.findByUsernameAndEmpresaId(username, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));

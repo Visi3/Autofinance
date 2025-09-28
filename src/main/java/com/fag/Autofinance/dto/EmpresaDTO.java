@@ -1,11 +1,12 @@
 package com.fag.Autofinance.dto;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.fag.Autofinance.entities.Empresa;
 
 public class EmpresaDTO {
-    private Long id;
+    private UUID id;
     private String nome;
     private String cnpj;
     private LocalDateTime dataCadastro;
@@ -57,11 +58,11 @@ public class EmpresaDTO {
         this.endereco = endereco;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

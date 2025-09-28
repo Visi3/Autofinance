@@ -1,6 +1,7 @@
 package com.fag.Autofinance.repositories;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,12 +12,12 @@ import com.fag.Autofinance.enums.StatusCadastros;
 
 public interface ServicoRepository extends JpaRepository<Servico, Long> {
 
-    Page<Servico> findByStatusAndEmpresaId(StatusCadastros status, Long empresaId, Pageable pageable);
+    Page<Servico> findByStatusAndEmpresaId(StatusCadastros status, UUID empresaId, Pageable pageable);
 
-    Optional<Servico> findByNomeContainingIgnoreCaseAndEmpresaId(String nome, Long empresaId);
+    Optional<Servico> findByNomeContainingIgnoreCaseAndEmpresaId(String nome, UUID empresaId);
 
-    Page<Servico> findAllByEmpresaId(Long empresaId, Pageable pageable);
+    Page<Servico> findAllByEmpresaId(UUID empresaId, Pageable pageable);
 
-    Optional<Servico> findByIdAndEmpresaId(Long id, Long empresaId);
+    Optional<Servico> findByIdAndEmpresaId(Long id, UUID empresaId);
 
 }

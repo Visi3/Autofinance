@@ -1,6 +1,7 @@
 package com.fag.Autofinance.services;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,21 +33,21 @@ public class ClienteService {
     }
 
     public List<ClienteDTO> listarTodos() {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return clienteRepository.findAllByEmpresaId(empresaId).stream()
                 .map(ClienteDTO::new)
                 .collect(Collectors.toList());
     }
 
     public ClienteDTO listarPorCpfCnpj(String cpfCnpj) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfCnpj, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
         return new ClienteDTO(cliente);
     }
 
     public List<ClienteDTO> listarPorStatus(StatusCadastros status) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         return clienteRepository.findByStatusAndEmpresaId(status, empresaId).stream()
                 .map(ClienteDTO::new)
                 .collect(Collectors.toList());
@@ -65,7 +66,7 @@ public class ClienteService {
     }
 
     public Cliente atualizar(String cpfCnpj, Cliente clienteAtualizado) {
-        Long empresaId = getUsuarioLogado().getEmpresa().getId();
+        UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         Cliente clienteExistente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfCnpj, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
 
