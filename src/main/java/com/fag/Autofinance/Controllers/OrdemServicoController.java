@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fag.Autofinance.dto.OrdemServicoDTO;
+import com.fag.Autofinance.entities.OrdemServico;
 import com.fag.Autofinance.services.OrdemServicoService;
 
 @RestController
@@ -28,14 +29,21 @@ public class OrdemServicoController {
         this.ordemServicoService = ordemServicoService;
     }
 
-    // Criar ordem de serviço a partir de um orçamento
-    @PostMapping("/criar/{numeroOrcamento}")
-    public ResponseEntity<OrdemServicoDTO> criarOrdem(@PathVariable Long numeroOrcamento) {
-        OrdemServicoDTO dto = ordemServicoService.criarOrdemServico(numeroOrcamento);
+    @PostMapping("/criar/orcamento/{numeroOrcamento}")
+    public ResponseEntity<OrdemServicoDTO> criarComOrcamento(
+            @PathVariable Long numeroOrcamento,
+            @RequestBody(required = false) OrdemServico ordemInput) {
+
+        OrdemServicoDTO dto = ordemServicoService.criarOrdemServico(numeroOrcamento, ordemInput);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
-    // Atualizar ordem de serviço
+    @PostMapping("/criar")
+    public ResponseEntity<OrdemServicoDTO> criarManual(@RequestBody OrdemServico ordemInput) {
+        OrdemServicoDTO dto = ordemServicoService.criarOrdemServico(null, ordemInput);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
     @PutMapping("/{numeroOrdem}")
     public ResponseEntity<OrdemServicoDTO> atualizarOrdem(
             @PathVariable Long numeroOrdem,
@@ -44,7 +52,6 @@ public class OrdemServicoController {
         return ResponseEntity.ok(atualizado);
     }
 
-    // Listar todas as ordens de serviço (paginação)
     @GetMapping
     public ResponseEntity<Page<OrdemServicoDTO>> listarTodos(
             @RequestParam(defaultValue = "0") int page,
@@ -54,7 +61,6 @@ public class OrdemServicoController {
         return ResponseEntity.ok(ordens);
     }
 
-    // Buscar ordem de serviço por número
     @GetMapping("/{numeroOrdem}")
     public ResponseEntity<OrdemServicoDTO> listarPorId(@PathVariable Long numeroOrdem) {
         OrdemServicoDTO dto = ordemServicoService.listarPorId(numeroOrdem);

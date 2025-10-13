@@ -15,9 +15,9 @@ import com.fag.Autofinance.entities.Orcamento;
 import com.fag.Autofinance.entities.Servico;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.entities.Veiculo;
-
+import com.fag.Autofinance.enums.RoleUsuario;
 import com.fag.Autofinance.enums.StatusOrcamento;
-
+import com.fag.Autofinance.exception.EnviarException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.ClienteRepository;
 import com.fag.Autofinance.repositories.OrcamentoRepository;
@@ -56,9 +56,8 @@ public class OrcamentoService {
         }
 
         public OrcamentoDTO atualizarOrcamento(Long numero, OrcamentoDTO orcamentoDTO) {
-
-                Usuarios mecanico = getUsuarioLogado();
-                UUID empresaId = mecanico.getEmpresa().getId();
+                Usuarios usuarioLogado = getUsuarioLogado();
+                UUID empresaId = usuarioLogado.getEmpresa().getId();
 
                 Orcamento orcamento = orcamentoRepository.findByNumeroAndEmpresaId(numero, empresaId)
                                 .orElseThrow(() -> new NaoEncontradoException(
@@ -69,40 +68,59 @@ public class OrcamentoService {
                                         "O status GERADO só pode ser definido ao criar uma Ordem de Serviço.");
                 }
 
-                Servico servico = servicoRepository.findByNomeContainingIgnoreCaseAndEmpresaId(
-                                orcamentoDTO.getServicoNome(),
-                                empresaId)
-                                .orElseThrow(() -> new NaoEncontradoException("Serviço não encontrado nesta empresa"));
-                orcamento.setServico(servico);
+                if (orcamentoDTO.getMecanicoUsername() != null) {
+                        Usuarios mecanicoSelecionado = usuarioRepository
+                                        .findByUsername(orcamentoDTO.getMecanicoUsername())
+                                        .orElseThrow(() -> new NaoEncontradoException("Mecânico não encontrado"));
+                        if (!mecanicoSelecionado.getEmpresa().getId().equals(empresaId)) {
+                                throw new IllegalArgumentException("Mecânico não pertence a esta empresa");
+                        }
+                        orcamento.setMecanico(mecanicoSelecionado);
+                }
 
+                Servico servico = servicoRepository.findByNomeContainingIgnoreCaseAndEmpresaId(
+                                orcamentoDTO.getServicoNome(), empresaId)
+                                .orElseThrow(() -> new NaoEncontradoException("Serviço não encontrado nesta empresa"));
+
+                orcamento.setServico(servico);
                 orcamento.setValorAjustado(orcamentoDTO.getValorAjustado());
                 orcamento.setStatus(orcamentoDTO.getStatus());
 
-                return new OrcamentoDTO(orcamentoRepository.save(orcamento));
+                Orcamento atualizado = orcamentoRepository.save(orcamento);
+                return new OrcamentoDTO(atualizado);
         }
 
         public OrcamentoDTO criarOrcamento(Orcamento orcamento) {
-                Usuarios mecanico = getUsuarioLogado();
-                Empresa empresa = mecanico.getEmpresa();
+                Usuarios usuarioLogado = getUsuarioLogado();
+                Empresa empresa = usuarioLogado.getEmpresa();
 
-                orcamento.setMecanico(mecanico);
+                if (orcamento.getMecanico() != null) {
+                        System.out.println("esse e o nome passado  " + orcamento.getMecanico() + "  final");
+                        Usuarios mecanicoSelecionado = usuarioRepository
+                                        .findByUsername(orcamento.getMecanico().getUsername())
+                                        .orElseThrow(() -> new NaoEncontradoException("Mecânico não encontrado"));
+                        if (!mecanicoSelecionado.getEmpresa().getId().equals(empresa.getId())) {
+                                throw new IllegalArgumentException("Mecânico não pertence a esta empresa");
+                        }
+                        orcamento.setMecanico(mecanicoSelecionado);
+                } else {
+                        orcamento.setMecanico(usuarioLogado);
+                }
+
                 orcamento.setEmpresa(empresa);
 
                 Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(
-                                orcamento.getCliente().getCpfCnpj(),
-                                empresa.getId())
+                                orcamento.getCliente().getCpfCnpj(), empresa.getId())
                                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado nesta empresa"));
                 orcamento.setCliente(cliente);
 
                 Veiculo veiculo = veiculoRepository.findByPlacaAndEmpresaId(
-                                orcamento.getVeiculo().getPlaca(),
-                                empresa.getId())
+                                orcamento.getVeiculo().getPlaca(), empresa.getId())
                                 .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado nesta empresa"));
                 orcamento.setVeiculo(veiculo);
 
                 Servico servico = servicoRepository.findByNomeContainingIgnoreCaseAndEmpresaId(
-                                orcamento.getServico().getNome(),
-                                empresa.getId())
+                                orcamento.getServico().getNome(), empresa.getId())
                                 .orElseThrow(() -> new NaoEncontradoException("Serviço não encontrado nesta empresa"));
                 orcamento.setServico(servico);
 
@@ -114,56 +132,76 @@ public class OrcamentoService {
                 Orcamento salvo = orcamentoRepository.save(orcamento);
 
                 String celularCliente = salvo.getCliente().getCelular();
-
-                /*
-                 * try {
-                 * String mensagem = String.format(
-                 * "Olá %s! Seu orçamento foi criado:\n" +
-                 * "- Código: %d\n" +
-                 * "- Valor: R$ %.2f\n" +
-                 * "- Mecânico: %s\n" +
-                 * "- Veículo: %s\n" +
-                 * "- Serviço: %s",
-                 * salvo.getCliente().getNome(),
-                 * salvo.getNumero(),
-                 * salvo.getValorAjustado(),
-                 * salvo.getMecanico().getUsername(),
-                 * salvo.getVeiculo().getModelo(),
-                 * salvo.getServico().getNome());
-                 * whatsAppService.enviarMensagem(celularCliente, mensagem);
-                 * } catch (EnviarException e) {
-                 * 
-                 * System.err.println("Erro ao enviar mensagem: " + e.getMessage());
-                 * 
-                 * throw new
-                 * RuntimeException("Não foi possível enviar a mensagem pelo WhatsApp", e);
-                 * }
-                 */
+                try {
+                        String mensagem = String.format(
+                                        "Olá %s! Seu orçamento foi criado:\n" +
+                                                        "- Código: %d\n" +
+                                                        "- Valor: R$ %.2f\n" +
+                                                        "- Mecânico: %s\n" +
+                                                        "- Veículo: %s\n" +
+                                                        "- Serviço: %s",
+                                        salvo.getCliente().getNome(),
+                                        salvo.getNumero(),
+                                        salvo.getValorAjustado(),
+                                        salvo.getMecanico().getUsername(),
+                                        salvo.getVeiculo().getModelo(),
+                                        salvo.getServico().getNome());
+                        whatsAppService.enviarMensagem(celularCliente, mensagem);
+                } catch (EnviarException e) {
+                        System.err.println("Erro ao enviar mensagem: " + e.getMessage());
+                        throw new RuntimeException("Não foi possível enviar a mensagem pelo WhatsApp", e);
+                }
 
                 return new OrcamentoDTO(salvo);
         }
 
         public Page<OrcamentoDTO> listarTodos(Pageable pageable) {
-                Usuarios mecanico = getUsuarioLogado();
-                UUID empresaId = mecanico.getEmpresa().getId();
+                Usuarios usuario = getUsuarioLogado();
+                UUID empresaId = usuario.getEmpresa().getId();
 
-                return orcamentoRepository.findByEmpresaId(empresaId, pageable)
-                                .map(OrcamentoDTO::new);
+                if (usuario.getRole() == RoleUsuario.ADMIN) {
+                        return orcamentoRepository.findByEmpresaId(empresaId, pageable)
+                                        .map(OrcamentoDTO::new);
+                } else {
+                        return orcamentoRepository
+                                        .findByMecanicoUsernameAndEmpresaId(usuario.getUsername(), empresaId, pageable)
+                                        .map(OrcamentoDTO::new);
+                }
         }
 
-        public List<OrcamentoDTO> listarPorMecanico(String username) {
-                UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-                return orcamentoRepository.findByMecanicoUsernameAndEmpresaId(username, empresaId)
-                                .stream()
-                                .map(OrcamentoDTO::new)
-                                .toList();
+        public List<OrcamentoDTO> listarPorMecanico() {
+                Usuarios usuario = getUsuarioLogado();
+                UUID empresaId = usuario.getEmpresa().getId();
+
+                if (usuario.getRole() == RoleUsuario.ADMIN) {
+                        return orcamentoRepository.findByEmpresaId(empresaId, Pageable.unpaged())
+                                        .stream()
+                                        .map(OrcamentoDTO::new)
+                                        .toList();
+                } else {
+                        return orcamentoRepository.findByMecanicoUsernameAndEmpresaId(
+                                        usuario.getUsername(),
+                                        empresaId,
+                                        Pageable.unpaged())
+                                        .stream()
+                                        .map(OrcamentoDTO::new)
+                                        .toList();
+                }
         }
 
         public OrcamentoDTO listarPorId(Long numero) {
-                UUID empresaId = getUsuarioLogado().getEmpresa().getId();
+                Usuarios usuario = getUsuarioLogado();
+                UUID empresaId = usuario.getEmpresa().getId();
+
                 Orcamento orcamento = orcamentoRepository
                                 .findByNumeroAndEmpresaId(numero, empresaId)
                                 .orElseThrow(() -> new NaoEncontradoException("Orçamento não encontrado"));
+
+                if (usuario.getRole() != RoleUsuario.ADMIN &&
+                                !orcamento.getMecanico().getUsername().equals(usuario.getUsername())) {
+                        throw new NaoEncontradoException("Orçamento não encontrado ou não pertence a este usuário");
+                }
+
                 return new OrcamentoDTO(orcamento);
         }
 

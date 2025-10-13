@@ -17,4 +17,5 @@ public interface ClienteRepository extends JpaRepository<Cliente, String> {
     List<Cliente> findByStatusAndEmpresaId(StatusCadastros status, UUID empresaId);
 
     boolean existsByCpfCnpjAndEmpresaId(String cpfCnpj, UUID empresaId);
+
 }

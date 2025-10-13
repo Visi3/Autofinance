@@ -23,4 +23,5 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, String> {
     boolean existsByPlacaAndEmpresaId(String placa, UUID empresaId);
 
     Page<Veiculo> findAllByEmpresaId(UUID empresaId, Pageable pageable);
+
 }

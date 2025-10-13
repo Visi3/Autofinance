@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,14 +32,14 @@ public class OrcamentoController {
     @PostMapping
     public ResponseEntity<OrcamentoDTO> criarOrcamento(@RequestBody Orcamento orcamento) {
         OrcamentoDTO salvo = orcamentoService.criarOrcamento(orcamento);
-        return ResponseEntity.ok(salvo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{numero}")
     public ResponseEntity<OrcamentoDTO> atualizarOrcamento(
-            @PathVariable Long id,
+            @PathVariable Long numero,
             @RequestBody OrcamentoDTO orcamentoDTO) {
-        OrcamentoDTO atualizado = orcamentoService.atualizarOrcamento(id, orcamentoDTO);
+        OrcamentoDTO atualizado = orcamentoService.atualizarOrcamento(numero, orcamentoDTO);
         return ResponseEntity.ok(atualizado);
     }
 
