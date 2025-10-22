@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.fag.Autofinance.dto.UsuariosDTO;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
+import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.UsuarioRepository;
 
@@ -60,6 +61,12 @@ public class UsuarioService implements UserDetailsService {
     public Usuarios criar(Usuarios usuarioNovo) {
         Usuarios usuarioLogado = getUsuarioLogado();
 
+        boolean emailExistente = usuarioRepository.findByEmail(usuarioNovo.getEmail())
+                .isPresent();
+        if (emailExistente) {
+            throw new JaExisteException("Esse email já esta sendo utilizado!");
+        }
+
         usuarioNovo.setEmpresa(usuarioLogado.getEmpresa());
         usuarioNovo.setPassword(passwordEncoder.encode(usuarioNovo.getPassword()));
         usuarioNovo.setStatus(StatusCadastros.ATIVO);
@@ -72,6 +79,15 @@ public class UsuarioService implements UserDetailsService {
 
         Usuarios usuarioExistente = usuarioRepository.findByUsernameAndEmpresaId(username, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
+
+        if (!usuarioExistente.getEmail().equals(usuarioAtualizado.getEmail())) {
+            boolean emailExistente = usuarioRepository.findByEmail(usuarioAtualizado.getEmail())
+                    .isPresent();
+            if (emailExistente) {
+                throw new JaExisteException("Esse email já esta sendo utilizado!");
+            }
+            usuarioExistente.setEmail(usuarioAtualizado.getEmail());
+        }
 
         usuarioExistente.setEmail(usuarioAtualizado.getEmail());
         usuarioExistente.setRole(usuarioAtualizado.getRole());

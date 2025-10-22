@@ -26,8 +26,6 @@ public class DashboardController {
 
     @GetMapping
     public DashboardDTO getDashboard() {
-        // Aqui você precisa passar o ID da empresa do usuário logado
-        // Pode ser obtido via SecurityContext ou diretamente do usuário
         Usuarios usuario = dashboardService.getUsuarioLogado();
         UUID empresaId = usuario.getEmpresa().getId();
 

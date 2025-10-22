@@ -61,13 +61,10 @@ public class DashboardService {
 
         DashboardDTO dto = new DashboardDTO();
 
-        // Total de clientes
         dto.setTotalClientes(clienteRepository.findAllByEmpresaId(empresaId).size());
 
-        // Total de veículos
         dto.setTotalVeiculos(veiculoRepository.findAllByEmpresaId(empresaId, Pageable.unpaged()).getTotalElements());
 
-        // Ordens em andamento
         List<OrdemServico> ordensAndamento = isAdmin
                 ? osRepository.findByEmpresaId(empresaId, Pageable.unpaged()).getContent()
                 : osRepository.findByMecanicoUsernameAndEmpresaId(usuario.getUsername(), empresaId);
@@ -78,7 +75,6 @@ public class DashboardService {
                 .count();
         dto.setOrdensEmAndamento((int) ordensEmAndamento);
 
-        // Todas as OS relevantes (para faturamento e últimos serviços)
         List<OrdemServico> todasOs = isAdmin
                 ? osRepository.findByEmpresaId(empresaId, Pageable.unpaged()).getContent()
                 : osRepository.findByMecanicoUsernameAndEmpresaId(usuario.getUsername(), empresaId);
@@ -87,7 +83,6 @@ public class DashboardService {
         LocalDate inicioMes = mesAtual.atDay(1);
         LocalDate fimMes = mesAtual.atEndOfMonth();
 
-        // Faturamento mensal
         BigDecimal faturamento = todasOs.stream()
                 .filter(os -> os.getStatus() == StatusOrdemServico.FINALIZADA)
                 .filter(os -> os.getDataFinalizacao() != null)
@@ -99,7 +94,6 @@ public class DashboardService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         dto.setFaturamentoMensal(faturamento);
 
-        // Últimos serviços (ordenados por dataFinalizacao DESC)
         List<DashboardDTO.ServicoResumoDTO> servicosRecentes = todasOs.stream()
                 .filter(os -> os.getStatus() == StatusOrdemServico.FINALIZADA)
                 .filter(os -> os.getDataFinalizacao() != null)
@@ -114,7 +108,6 @@ public class DashboardService {
                 .collect(Collectors.toList());
         dto.setServicosRecentes(servicosRecentes);
 
-        // Orçamentos recentes (ordenados por dataCadastro DESC)
         List<Orcamento> orcamentos = isAdmin
                 ? orcamentoRepository.findByEmpresaId(empresaId, Pageable.unpaged()).getContent()
                 : orcamentoRepository
@@ -135,7 +128,6 @@ public class DashboardService {
                 .collect(Collectors.toList());
         dto.setOrcamentosRecentes(orcamentosRecentes);
 
-        // Calendário de agendamentos
         List<Agendamento> agendamentos = isAdmin
                 ? agendamentoRepository.findByOrdemServicoEmpresaId(empresaId, Pageable.unpaged()).getContent()
                 : agendamentoRepository.findByMecanicoUsernameAndOrdemServicoEmpresaId(usuario.getUsername(), empresaId,

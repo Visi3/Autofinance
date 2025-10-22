@@ -30,7 +30,8 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID> 
         List<Agendamento> findByOrdemServicoClienteNomeContainingIgnoreCaseAndOrdemServicoEmpresaId(String nomeCliente,
                         UUID empresaId);
 
-        List<Agendamento> findByDataAgendadaBetweenAndOrdemServicoEmpresaId(LocalDateTime inicio, LocalDateTime fim,
+        List<Agendamento> findByDataAgendadaBetweenAndOrdemServicoEmpresaId(LocalDateTime inicioMes,
+                        LocalDateTime fimMes,
                         UUID empresaId);
 
         @Query("SELECT MAX(a.numero) FROM Agendamento a WHERE a.ordemServico.empresa.id = :empresaId")

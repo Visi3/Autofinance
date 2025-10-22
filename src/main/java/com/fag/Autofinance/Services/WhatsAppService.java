@@ -3,7 +3,9 @@ package com.fag.Autofinance.services;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.fag.Autofinance.exception.EnviarException;
 import com.twilio.Twilio;
+import com.twilio.exception.ApiException;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 
@@ -25,18 +27,36 @@ public class WhatsAppService {
         }
     }
 
-    public void enviarMensagem(String paraNumero, String mensagem) {
-        String to = paraNumero.startsWith("whatsapp:") ? paraNumero : "whatsapp:" + paraNumero;
+    public void enviarMensagem(String numeroDestino, String mensagem) {
+        try {
+            String numeroFormatado = formatarNumeroWhatsapp(numeroDestino);
+            System.out.println(mensagem);
+            Message.creator(
+                    new PhoneNumber(numeroFormatado),
+                    new PhoneNumber(fromNumber),
+                    mensagem).create();
 
-        System.out.println(to);
-        System.out.println(mensagem);
-        System.out.println(fromNumber);
+        } catch (ApiException e) {
+            throw new EnviarException(
+                    "Não foi possível enviar a mensagem via WhatsApp. Verifique o número ou a conexão com o Twilio.");
+        } catch (Exception e) {
+            throw new EnviarException("Erro inesperado ao tentar enviar a mensagem via WhatsApp.");
+        }
+    }
 
-        Message message = Message.creator(
-                new PhoneNumber(to),
-                new PhoneNumber(fromNumber),
-                mensagem).create();
+    private String formatarNumeroWhatsapp(String numero) {
+        if (numero == null || numero.isBlank()) {
+            throw new IllegalArgumentException("Número de WhatsApp não pode ser vazio.");
+        }
 
-        System.out.println("Mensagem enviada SID: " + message.getSid());
+        // Remove tudo que não for número
+        String apenasNumeros = numero.replaceAll("\\D", "");
+
+        // Garante o código do país (Brasil = 55)
+        if (!apenasNumeros.startsWith("55")) {
+            apenasNumeros = "55" + apenasNumeros;
+        }
+
+        return "whatsapp:+" + apenasNumeros;
     }
 }

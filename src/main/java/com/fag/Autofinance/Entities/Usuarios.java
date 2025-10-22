@@ -39,6 +39,7 @@ public class Usuarios implements UserDetails {
     private String nome;
 
     @Email
+    @Column(nullable = false, unique = true)
     private String email;
 
     private String telefone;
