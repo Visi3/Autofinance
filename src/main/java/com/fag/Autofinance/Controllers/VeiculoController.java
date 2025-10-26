@@ -1,8 +1,6 @@
 package com.fag.Autofinance.controllers;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,29 +26,33 @@ public class VeiculoController {
     }
 
     @GetMapping
-    public Page<VeiculoDTO> listarTodos(Pageable pageable) {
-        return veiculoService.listarTodos(pageable);
+    public ResponseEntity<List<VeiculoDTO>> listarTodos() {
+        List<VeiculoDTO> veiculos = veiculoService.listarTodos();
+        return ResponseEntity.ok(veiculos);
     }
 
     @GetMapping("/ativos")
-    public Page<VeiculoDTO> listarAtivos(@PageableDefault(size = 10) Pageable pageable) {
-        return veiculoService.listarPorStatus(StatusCadastros.ATIVO, pageable);
+    public ResponseEntity<List<VeiculoDTO>> listarAtivos() {
+        List<VeiculoDTO> veiculos = veiculoService.listarPorStatus(StatusCadastros.ATIVO);
+        return ResponseEntity.ok(veiculos);
     }
 
     @GetMapping("/inativos")
-    public Page<VeiculoDTO> listarInativos(@PageableDefault(size = 10) Pageable pageable) {
-        return veiculoService.listarPorStatus(StatusCadastros.INATIVO, pageable);
+    public ResponseEntity<List<VeiculoDTO>> listarInativos() {
+        List<VeiculoDTO> veiculos = veiculoService.listarPorStatus(StatusCadastros.INATIVO);
+        return ResponseEntity.ok(veiculos);
     }
 
     @GetMapping("/cpfcnpj/{cpfCnpj}")
-    public Page<VeiculoDTO> listarPorCpfCnpj(@PageableDefault(size = 10) @PathVariable String cpfCnpj,
-            Pageable pageable) {
-        return veiculoService.listarPorCpfCnpj(cpfCnpj, pageable);
+    public ResponseEntity<List<VeiculoDTO>> listarPorCpfCnpj(@PathVariable String cpfCnpj) {
+        List<VeiculoDTO> veiculos = veiculoService.listarPorCpfCnpj(cpfCnpj);
+        return ResponseEntity.ok(veiculos);
     }
 
     @GetMapping("/nome/{nome}")
-    public Page<VeiculoDTO> listarPorNome(@PageableDefault(size = 10) @PathVariable String nome, Pageable pageable) {
-        return veiculoService.listarPorNome(nome, pageable);
+    public ResponseEntity<List<VeiculoDTO>> listarPorNome(@PathVariable String nome) {
+        List<VeiculoDTO> veiculos = veiculoService.listarPorNome(nome);
+        return ResponseEntity.ok(veiculos);
     }
 
     @GetMapping("/{placa}")

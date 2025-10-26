@@ -1,5 +1,6 @@
 package com.fag.Autofinance.services;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,28 +42,36 @@ public class VeiculoService {
                 .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
     }
 
-    public Page<VeiculoDTO> listarPorCpfCnpj(String cpfCnpj, Pageable pageable) {
+    public List<VeiculoDTO> listarPorCpfCnpj(String cpfCnpj) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return veiculoRepository.findByCliente_CpfCnpjAndEmpresaId(cpfCnpj, empresaId, pageable)
-                .map(VeiculoDTO::new);
+        return veiculoRepository.findByCliente_CpfCnpjAndEmpresaIdOrderByStatusCustom(cpfCnpj, empresaId)
+                .stream()
+                .map(VeiculoDTO::new)
+                .toList();
     }
 
-    public Page<VeiculoDTO> listarPorNome(String nome, Pageable pageable) {
+    public List<VeiculoDTO> listarPorNome(String nome) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return veiculoRepository.findByCliente_NomeContainingIgnoreCaseAndEmpresaId(nome, empresaId, pageable)
-                .map(VeiculoDTO::new);
+        return veiculoRepository.findByCliente_NomeContainingIgnoreCaseAndEmpresaIdOrderByStatusCustom(nome, empresaId)
+                .stream()
+                .map(VeiculoDTO::new)
+                .toList();
     }
 
-    public Page<VeiculoDTO> listarTodos(Pageable pageable) {
+    public List<VeiculoDTO> listarTodos() {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return veiculoRepository.findAllByEmpresaId(empresaId, pageable)
-                .map(VeiculoDTO::new);
+        return veiculoRepository.findAllByEmpresaIdOrderByStatusCustom(empresaId)
+                .stream()
+                .map(VeiculoDTO::new)
+                .toList();
     }
 
-    public Page<VeiculoDTO> listarPorStatus(StatusCadastros status, Pageable pageable) {
+    public List<VeiculoDTO> listarPorStatus(StatusCadastros status) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return veiculoRepository.findByStatusAndEmpresaId(status, empresaId, pageable)
-                .map(VeiculoDTO::new);
+        return veiculoRepository.findByStatusAndEmpresaIdOrderByStatusCustom(status, empresaId)
+                .stream()
+                .map(VeiculoDTO::new)
+                .toList();
     }
 
     public VeiculoDTO listarPorPlaca(String placa) {

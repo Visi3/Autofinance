@@ -32,42 +32,57 @@ public class ClienteService {
                 .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
     }
 
+    private String formatarCpfCnpj(String cpfCnpj) {
+        if (cpfCnpj == null || cpfCnpj.isBlank()) {
+            throw new IllegalArgumentException("CPF/CNPJ não pode ser vazio");
+        }
+        return cpfCnpj.replaceAll("\\D", "");
+    }
+
     public List<ClienteDTO> listarTodos() {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return clienteRepository.findAllByEmpresaId(empresaId).stream()
+        return clienteRepository.findAllByEmpresaId(empresaId)
+                .stream()
                 .map(ClienteDTO::new)
                 .collect(Collectors.toList());
     }
 
     public ClienteDTO listarPorCpfCnpj(String cpfCnpj) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfCnpj, empresaId)
+        String cpfFormatado = formatarCpfCnpj(cpfCnpj);
+        Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfFormatado, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
         return new ClienteDTO(cliente);
     }
 
     public List<ClienteDTO> listarPorStatus(StatusCadastros status) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return clienteRepository.findByStatusAndEmpresaId(status, empresaId).stream()
+        return clienteRepository.findByStatusAndEmpresaId(status, empresaId)
+                .stream()
                 .map(ClienteDTO::new)
                 .collect(Collectors.toList());
     }
 
     public Cliente criar(Cliente cliente) {
         Usuarios usuarioLogado = getUsuarioLogado();
+        String cpfFormatado = formatarCpfCnpj(cliente.getCpfCnpj());
 
-        if (clienteRepository.existsByCpfCnpjAndEmpresaId(cliente.getCpfCnpj(), usuarioLogado.getEmpresa().getId())) {
+        if (clienteRepository.existsByCpfCnpjAndEmpresaId(cpfFormatado, usuarioLogado.getEmpresa().getId())) {
             throw new JaExisteException("Já existe um cliente com este CPF/CNPJ");
         }
 
+        cliente.setCpfCnpj(cpfFormatado);
         cliente.setEmpresa(usuarioLogado.getEmpresa());
         cliente.setStatus(StatusCadastros.ATIVO);
+
         return clienteRepository.save(cliente);
     }
 
     public Cliente atualizar(String cpfCnpj, Cliente clienteAtualizado) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        Cliente clienteExistente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfCnpj, empresaId)
+        String cpfFormatado = formatarCpfCnpj(cpfCnpj);
+
+        Cliente clienteExistente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfFormatado, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
 
         clienteExistente.setNome(clienteAtualizado.getNome());

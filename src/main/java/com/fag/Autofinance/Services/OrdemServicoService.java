@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -11,6 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -268,20 +270,23 @@ public class OrdemServicoService {
         }
     }
 
-    public Page<OrdemServicoDTO> listarTodos(Pageable pageable) {
+    public List<OrdemServicoDTO> listarTodos() {
         Usuarios usuario = getUsuarioLogado();
         UUID empresaId = usuario.getEmpresa().getId();
 
+        List<OrdemServico> ordens;
+
         if (usuario.getRole() == RoleUsuario.ADMIN) {
-            return ordemServicoRepository.findByEmpresaId(empresaId, pageable)
-                    .map(OrdemServicoDTO::new);
+            ordens = ordemServicoRepository.findByEmpresaIdOrderByStatusCustom(empresaId);
         } else {
-            return ordemServicoRepository.findByMecanicoUsernameAndEmpresaId(usuario.getUsername(), empresaId)
-                    .stream()
-                    .map(OrdemServicoDTO::new)
-                    .collect(Collectors.collectingAndThen(Collectors.toList(),
-                            list -> new PageImpl<>(list, pageable, list.size())));
+            ordens = ordemServicoRepository.findByMecanicoUsernameAndEmpresaIdOrderByStatusCustom(
+                    usuario.getUsername(),
+                    empresaId);
         }
+
+        return ordens.stream()
+                .map(OrdemServicoDTO::new)
+                .toList();
     }
 
     public OrdemServicoDTO listarPorId(Long numeroOrdem) {

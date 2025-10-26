@@ -30,9 +30,15 @@ public class EmpresaService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public EmpresaDTO criarEmpresaComAdmin(CriarEmpresaDTO dto) {
+    private String formatarCnpj(String cnpj) {
+        if (cnpj == null || cnpj.isBlank()) {
+            throw new IllegalArgumentException("CNPJ não pode ser vazio");
+        }
+        return cnpj.replaceAll("\\D", "");
+    }
 
-        String cnpjNormalizado = dto.getCnpj().replaceAll("\\D", "");
+    public EmpresaDTO criarEmpresaComAdmin(CriarEmpresaDTO dto) {
+        String cnpjNormalizado = formatarCnpj(dto.getCnpj());
 
         boolean existe = empresaRepository.existsByCnpjIgnorePunctuation(cnpjNormalizado);
         if (existe) {
@@ -41,7 +47,7 @@ public class EmpresaService {
 
         Empresa empresa = new Empresa();
         empresa.setNome(dto.getNome());
-        empresa.setCnpj(dto.getCnpj());
+        empresa.setCnpj(cnpjNormalizado);
         empresa.setEndereco(dto.getEndereco());
         empresa.setCidade(dto.getCidade());
         empresa.setTelefone(dto.getTelefone());

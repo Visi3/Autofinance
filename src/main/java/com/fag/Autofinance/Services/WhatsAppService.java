@@ -20,11 +20,9 @@ public class WhatsAppService {
             @Value("${twilio.whatsappFromNumber}") String fromNumber) {
 
         Twilio.init(accountSid, authToken);
-        if (!fromNumber.startsWith("whatsapp:")) {
-            this.fromNumber = "whatsapp:" + fromNumber;
-        } else {
-            this.fromNumber = fromNumber;
-        }
+
+        this.fromNumber = fromNumber;
+
     }
 
     public void enviarMensagem(String numeroDestino, String mensagem) {
@@ -49,10 +47,8 @@ public class WhatsAppService {
             throw new IllegalArgumentException("Número de WhatsApp não pode ser vazio.");
         }
 
-        // Remove tudo que não for número
         String apenasNumeros = numero.replaceAll("\\D", "");
 
-        // Garante o código do país (Brasil = 55)
         if (!apenasNumeros.startsWith("55")) {
             apenasNumeros = "55" + apenasNumeros;
         }

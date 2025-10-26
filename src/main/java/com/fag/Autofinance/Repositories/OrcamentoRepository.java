@@ -1,17 +1,43 @@
 package com.fag.Autofinance.repositories;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
 import com.fag.Autofinance.entities.Orcamento;
 
 public interface OrcamentoRepository extends JpaRepository<Orcamento, Long> {
 
-    Page<Orcamento> findByMecanicoUsernameAndEmpresaId(String username, UUID empresaId, Pageable pageable);
+    @Query("""
+                SELECT o FROM Orcamento o
+                WHERE o.empresa.id = :empresaId
+                ORDER BY
+                    CASE o.status
+                        WHEN 'ATIVO' THEN 1
+                        WHEN 'GERADO' THEN 2
+                        WHEN 'INATIVO' THEN 3
+                        ELSE 4
+                    END
+            """)
+    List<Orcamento> findByEmpresaIdOrderByStatusDesc(UUID empresaId);
 
-    Page<Orcamento> findByEmpresaId(UUID empresaId, Pageable pageable);
+    @Query("""
+                SELECT o FROM Orcamento o
+                WHERE o.mecanico.username = :username
+                  AND o.empresa.id = :empresaId
+                ORDER BY
+                    CASE o.status
+                        WHEN 'ATIVO' THEN 1
+                        WHEN 'GERADO' THEN 2
+                        WHEN 'INATIVO' THEN 3
+                        ELSE 4
+                    END
+            """)
+    List<Orcamento> findByMecanicoUsernameAndEmpresaIdOrderByStatusDesc(
+            String username,
+            UUID empresaId);
 
     Optional<Orcamento> findByNumeroAndEmpresaId(Long numeroOrcamento, UUID empresaId);
 

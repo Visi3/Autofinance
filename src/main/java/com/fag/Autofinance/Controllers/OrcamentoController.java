@@ -44,10 +44,9 @@ public class OrcamentoController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<OrcamentoDTO>> listarTodos(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(orcamentoService.listarTodos(PageRequest.of(page, size)));
+    public ResponseEntity<List<OrcamentoDTO>> listarTodos() {
+        List<OrcamentoDTO> orcamentos = orcamentoService.listarTodos();
+        return ResponseEntity.ok(orcamentos);
     }
 
     @GetMapping("/{id}")

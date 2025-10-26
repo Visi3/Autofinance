@@ -19,7 +19,34 @@ public interface OrdemServicoRepository extends JpaRepository<OrdemServico, Long
     @Query("SELECT MAX(o.numero) FROM OrdemServico o WHERE o.empresa.id = :empresaId")
     Optional<Integer> findUltimoNumeroPorEmpresa(@Param("empresaId") UUID empresaId);
 
-    Page<OrdemServico> findByEmpresaId(UUID empresaId, Pageable pageable);
+    @Query("""
+                SELECT o FROM OrdemServico o
+                WHERE o.empresa.id = :empresaId
+                ORDER BY
+                    CASE o.status
+                        WHEN 'ATIVA' THEN 1
+                        WHEN 'GERADA' THEN 2
+                        WHEN 'INATIVA' THEN 3
+                        ELSE 4
+                    END
+            """)
+    List<OrdemServico> findByEmpresaIdOrderByStatusCustom(UUID empresaId);
+
+    @Query("""
+                SELECT o FROM OrdemServico o
+                WHERE o.mecanico.username = :username
+                  AND o.empresa.id = :empresaId
+                ORDER BY
+                    CASE o.status
+                        WHEN 'ATIVA' THEN 1
+                        WHEN 'GERADA' THEN 2
+                        WHEN 'INATIVA' THEN 3
+                        ELSE 4
+                    END
+            """)
+    List<OrdemServico> findByMecanicoUsernameAndEmpresaIdOrderByStatusCustom(
+            String username,
+            UUID empresaId);
 
     Optional<OrdemServico> findByNumeroAndEmpresaId(Long numero, UUID empresaId);
 
