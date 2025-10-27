@@ -45,7 +45,7 @@ public class OrdemServico {
     @ManyToOne(optional = false)
     private Usuarios mecanico;
 
-    @OneToOne(optional = false)
+    @OneToOne()
     private Orcamento orcamento;
 
     private Double valor;
