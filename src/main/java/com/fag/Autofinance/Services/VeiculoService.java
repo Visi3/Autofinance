@@ -1,11 +1,7 @@
 package com.fag.Autofinance.services;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -16,17 +12,18 @@ import com.fag.Autofinance.entities.Veiculo;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
+import com.fag.Autofinance.exception.ValidarException;
 import com.fag.Autofinance.repositories.ClienteRepository;
 import com.fag.Autofinance.repositories.UsuarioRepository;
 import com.fag.Autofinance.repositories.VeiculoRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class VeiculoService {
 
     private final VeiculoRepository veiculoRepository;
-
     private final ClienteRepository clienteRepository;
-
     private final UsuarioRepository usuarioRepository;
 
     public VeiculoService(VeiculoRepository veiculoRepository, ClienteRepository clienteRepository,
@@ -40,6 +37,13 @@ public class VeiculoService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
+    }
+
+    private String padronizarPlaca(String placa) {
+        if (placa == null) {
+            return null;
+        }
+        return placa.toUpperCase().replaceAll("[^A-Z0-9]", "");
     }
 
     public List<VeiculoDTO> listarPorCpfCnpj(String cpfCnpj) {
@@ -68,7 +72,7 @@ public class VeiculoService {
 
     public List<VeiculoDTO> listarPorStatus(StatusCadastros status) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return veiculoRepository.findByStatusAndEmpresaIdOrderByStatusCustom(status, empresaId)
+        return veiculoRepository.findByStatusAndEmpresaId(status, empresaId)
                 .stream()
                 .map(VeiculoDTO::new)
                 .toList();
@@ -76,25 +80,35 @@ public class VeiculoService {
 
     public VeiculoDTO listarPorPlaca(String placa) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        Veiculo veiculo = veiculoRepository.findByPlacaAndEmpresaId(placa, empresaId)
+        String placaPadronizada = padronizarPlaca(placa);
+
+        Veiculo veiculo = veiculoRepository.findByPlacaAndEmpresaId(placaPadronizada, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado com essa placa."));
+
         return new VeiculoDTO(veiculo);
     }
 
+    @Transactional
     public Veiculo criar(Veiculo veiculo) {
         Usuarios usuarioLogado = getUsuarioLogado();
+        UUID empresaId = usuarioLogado.getEmpresa().getId();
 
-        if (veiculoRepository.existsByPlacaAndEmpresaId(veiculo.getPlaca(), usuarioLogado.getEmpresa().getId())) {
+        String placaPadronizada = padronizarPlaca(veiculo.getPlaca());
+        if (placaPadronizada == null || placaPadronizada.isBlank()) {
+            throw new ValidarException("Placa é obrigatória.");
+        }
+
+        if (veiculoRepository.existsByPlacaAndEmpresaId(placaPadronizada, empresaId)) {
             throw new JaExisteException("Veículo com essa placa já está cadastrado.");
         }
+        veiculo.setPlaca(placaPadronizada);
 
         if (veiculo.getCliente() == null || veiculo.getCliente().getCpfCnpj() == null) {
-            throw new IllegalArgumentException("Cliente com CPF/CNPJ é obrigatório.");
+            throw new ValidarException("Cliente com CPF/CNPJ é obrigatório.");
         }
-
         Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(
                 veiculo.getCliente().getCpfCnpj(),
-                usuarioLogado.getEmpresa().getId())
+                empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado com CPF/CNPJ informado."));
 
         veiculo.setCliente(cliente);
@@ -104,30 +118,33 @@ public class VeiculoService {
         return veiculoRepository.save(veiculo);
     }
 
+    @Transactional
     public Veiculo atualizar(String placa, Veiculo veiculoAtualizado) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
+        String placaPadronizada = padronizarPlaca(placa);
 
-        Veiculo existente = veiculoRepository.findByPlacaAndEmpresaId(placa, empresaId)
+        Veiculo existente = veiculoRepository.findByPlacaAndEmpresaId(placaPadronizada, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Veículo não encontrado com essa placa."));
 
-        Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(
-                veiculoAtualizado.getCliente().getCpfCnpj(),
-                empresaId)
-                .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado com CPF/CNPJ informado."));
+        if (veiculoAtualizado.getModelo() != null) {
+            existente.setModelo(veiculoAtualizado.getModelo());
+        }
+        if (veiculoAtualizado.getMarca() != null) {
+            existente.setMarca(veiculoAtualizado.getMarca());
+        }
 
-        existente.setModelo(veiculoAtualizado.getModelo());
-        existente.setMarca(veiculoAtualizado.getMarca());
-        existente.setAno(veiculoAtualizado.getAno());
-        existente.setCor(veiculoAtualizado.getCor());
-        existente.setRenavam(veiculoAtualizado.getRenavam());
-        existente.setChassi(veiculoAtualizado.getChassi());
-        existente.setCombustivel(veiculoAtualizado.getCombustivel());
-        existente.setQuilometragem(veiculoAtualizado.getQuilometragem());
-        existente.setObservacoes(veiculoAtualizado.getObservacoes());
-        existente.setStatus(veiculoAtualizado.getStatus());
-        existente.setCliente(cliente);
+        if (veiculoAtualizado.getStatus() != null) {
+            existente.setStatus(veiculoAtualizado.getStatus());
+        }
+
+        if (veiculoAtualizado.getCliente() != null && veiculoAtualizado.getCliente().getCpfCnpj() != null) {
+            Cliente cliente = clienteRepository.findByCpfCnpjAndEmpresaId(
+                    veiculoAtualizado.getCliente().getCpfCnpj(),
+                    empresaId)
+                    .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado com CPF/CNPJ informado."));
+            existente.setCliente(cliente);
+        }
 
         return veiculoRepository.save(existente);
     }
-
 }

@@ -1,8 +1,7 @@
 package com.fag.Autofinance.controllers;
 
-import org.springframework.data.domain.Page;
+import java.util.List;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,12 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.fag.Autofinance.dto.ServicoDTO;
 import com.fag.Autofinance.entities.Servico;
-import com.fag.Autofinance.entities.Veiculo;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.services.ServicoService;
 
@@ -30,18 +26,18 @@ public class ServicoController {
     }
 
     @GetMapping
-    public Page<ServicoDTO> listarTodos(Pageable pageable) {
-        return servicoService.listarTodos(pageable);
+    public List<ServicoDTO> listarTodos() {
+        return servicoService.listarTodos();
     }
 
     @GetMapping("/ativos")
-    public Page<ServicoDTO> listarAtivos(Pageable pageable) {
-        return servicoService.listarPorStatus(StatusCadastros.ATIVO, pageable);
+    public List<ServicoDTO> listarAtivos() {
+        return servicoService.listarPorStatus(StatusCadastros.ATIVO);
     }
 
     @GetMapping("/inativos")
-    public Page<ServicoDTO> listarInativos(Pageable pageable) {
-        return servicoService.listarPorStatus(StatusCadastros.INATIVO, pageable);
+    public List<ServicoDTO> listarInativos(Pageable pageable) {
+        return servicoService.listarPorStatus(StatusCadastros.INATIVO);
     }
 
     @PostMapping

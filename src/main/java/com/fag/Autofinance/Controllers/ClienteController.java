@@ -1,20 +1,14 @@
 package com.fag.Autofinance.controllers;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.fag.Autofinance.dto.ClienteDTO;
 import com.fag.Autofinance.entities.Cliente;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.services.ClienteService;
-
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/clientes")

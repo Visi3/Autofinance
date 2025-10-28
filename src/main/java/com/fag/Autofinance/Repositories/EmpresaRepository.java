@@ -2,10 +2,7 @@ package com.fag.Autofinance.repositories;
 
 import java.util.Optional;
 import java.util.UUID;
-
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.fag.Autofinance.entities.Empresa;
@@ -15,8 +12,5 @@ public interface EmpresaRepository extends JpaRepository<Empresa, UUID> {
 
     Optional<Empresa> findByCnpj(String cnpj);
 
-    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END " +
-            "FROM Empresa e " +
-            "WHERE REPLACE(REPLACE(REPLACE(e.cnpj, '.', ''), '/', ''), '-', '') = :cnpj")
-    boolean existsByCnpjIgnorePunctuation(@Param("cnpj") String cnpj);
+    boolean existsByCnpj(String cnpjNormalizado);
 }

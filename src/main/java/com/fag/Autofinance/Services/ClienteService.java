@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fag.Autofinance.dto.ClienteDTO;
 import com.fag.Autofinance.entities.Cliente;
@@ -14,17 +14,20 @@ import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
+import com.fag.Autofinance.exception.ValidarException;
 import com.fag.Autofinance.repositories.ClienteRepository;
 import com.fag.Autofinance.repositories.UsuarioRepository;
 
 @Service
 public class ClienteService {
 
-    @Autowired
-    private ClienteRepository clienteRepository;
+    private final ClienteRepository clienteRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    public ClienteService(ClienteRepository clienteRepository, UsuarioRepository usuarioRepository) {
+        this.clienteRepository = clienteRepository;
+        this.usuarioRepository = usuarioRepository;
+    }
 
     private Usuarios getUsuarioLogado() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -34,7 +37,7 @@ public class ClienteService {
 
     private String formatarCpfCnpj(String cpfCnpj) {
         if (cpfCnpj == null || cpfCnpj.isBlank()) {
-            throw new IllegalArgumentException("CPF/CNPJ não pode ser vazio");
+            throw new ValidarException("CPF/CNPJ não pode ser vazio");
         }
         return cpfCnpj.replaceAll("\\D", "");
     }
@@ -63,6 +66,7 @@ public class ClienteService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public Cliente criar(Cliente cliente) {
         Usuarios usuarioLogado = getUsuarioLogado();
         String cpfFormatado = formatarCpfCnpj(cliente.getCpfCnpj());
@@ -78,6 +82,7 @@ public class ClienteService {
         return clienteRepository.save(cliente);
     }
 
+    @Transactional
     public Cliente atualizar(String cpfCnpj, Cliente clienteAtualizado) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
         String cpfFormatado = formatarCpfCnpj(cpfCnpj);
@@ -85,13 +90,27 @@ public class ClienteService {
         Cliente clienteExistente = clienteRepository.findByCpfCnpjAndEmpresaId(cpfFormatado, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Cliente não encontrado"));
 
-        clienteExistente.setNome(clienteAtualizado.getNome());
-        clienteExistente.setEmail(clienteAtualizado.getEmail());
-        clienteExistente.setCelular(clienteAtualizado.getCelular());
-        clienteExistente.setObservacoes(clienteAtualizado.getObservacoes());
-        clienteExistente.setEndereco(clienteAtualizado.getEndereco());
-        clienteExistente.setCep(clienteAtualizado.getCep());
-        clienteExistente.setStatus(clienteAtualizado.getStatus());
+        if (clienteAtualizado.getNome() != null) {
+            clienteExistente.setNome(clienteAtualizado.getNome());
+        }
+        if (clienteAtualizado.getEmail() != null) {
+            clienteExistente.setEmail(clienteAtualizado.getEmail());
+        }
+        if (clienteAtualizado.getCelular() != null) {
+            clienteExistente.setCelular(clienteAtualizado.getCelular());
+        }
+        if (clienteAtualizado.getObservacoes() != null) {
+            clienteExistente.setObservacoes(clienteAtualizado.getObservacoes());
+        }
+        if (clienteAtualizado.getEndereco() != null) {
+            clienteExistente.setEndereco(clienteAtualizado.getEndereco());
+        }
+        if (clienteAtualizado.getCep() != null) {
+            clienteExistente.setCep(clienteAtualizado.getCep());
+        }
+        if (clienteAtualizado.getStatus() != null) {
+            clienteExistente.setStatus(clienteAtualizado.getStatus());
+        }
 
         return clienteRepository.save(clienteExistente);
     }

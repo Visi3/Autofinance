@@ -3,20 +3,20 @@ package com.fag.Autofinance.services;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import com.fag.Autofinance.dto.UsuariosDTO;
+import com.fag.Autofinance.entities.Empresa;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.UsuarioRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UsuarioService implements UserDetailsService {
@@ -58,40 +58,49 @@ public class UsuarioService implements UserDetailsService {
         return new UsuariosDTO(usuario);
     }
 
+    @Transactional
     public Usuarios criar(Usuarios usuarioNovo) {
         Usuarios usuarioLogado = getUsuarioLogado();
+        Empresa empresa = usuarioLogado.getEmpresa();
 
-        boolean emailExistente = usuarioRepository.findByEmail(usuarioNovo.getEmail())
-                .isPresent();
-        if (emailExistente) {
-            throw new JaExisteException("Esse email já esta sendo utilizado!");
+        if (usuarioRepository.existsByUsername(usuarioNovo.getUsername())) {
+            throw new JaExisteException("Esse 'username' (nome de usuário) já está em uso!");
         }
 
-        usuarioNovo.setEmpresa(usuarioLogado.getEmpresa());
+        if (usuarioRepository.findByEmail(usuarioNovo.getEmail()).isPresent()) {
+            throw new JaExisteException("Esse email já está sendo utilizado por outro usuário!");
+        }
+
+        usuarioNovo.setEmpresa(empresa);
         usuarioNovo.setPassword(passwordEncoder.encode(usuarioNovo.getPassword()));
         usuarioNovo.setStatus(StatusCadastros.ATIVO);
 
         return usuarioRepository.save(usuarioNovo);
     }
 
+    @Transactional
     public Usuarios atualizar(String username, Usuarios usuarioAtualizado) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
 
         Usuarios usuarioExistente = usuarioRepository.findByUsernameAndEmpresaId(username, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
 
-        if (!usuarioExistente.getEmail().equals(usuarioAtualizado.getEmail())) {
-            boolean emailExistente = usuarioRepository.findByEmail(usuarioAtualizado.getEmail())
-                    .isPresent();
-            if (emailExistente) {
-                throw new JaExisteException("Esse email já esta sendo utilizado!");
+        String novoEmail = usuarioAtualizado.getEmail();
+        if (novoEmail != null && !novoEmail.equals(usuarioExistente.getEmail())) {
+
+            if (usuarioRepository.findByEmail(novoEmail).isPresent()) {
+                throw new JaExisteException("Esse email já está sendo utilizado por outro usuário!");
             }
-            usuarioExistente.setEmail(usuarioAtualizado.getEmail());
+            usuarioExistente.setEmail(novoEmail);
         }
 
-        usuarioExistente.setEmail(usuarioAtualizado.getEmail());
-        usuarioExistente.setRole(usuarioAtualizado.getRole());
-        usuarioExistente.setStatus(usuarioAtualizado.getStatus());
+        if (usuarioAtualizado.getRole() != null) {
+            usuarioExistente.setRole(usuarioAtualizado.getRole());
+        }
+
+        if (usuarioAtualizado.getStatus() != null) {
+            usuarioExistente.setStatus(usuarioAtualizado.getStatus());
+        }
 
         if (usuarioAtualizado.getPassword() != null && !usuarioAtualizado.getPassword().isBlank()) {
             usuarioExistente.setPassword(passwordEncoder.encode(usuarioAtualizado.getPassword()));

@@ -5,21 +5,19 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.fag.Autofinance.dto.AgendamentoDTO;
 import com.fag.Autofinance.entities.Agendamento;
 import com.fag.Autofinance.entities.OrdemServico;
 import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.enums.RoleUsuario;
 import com.fag.Autofinance.enums.StatusAgendamento;
+import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.enums.StatusOrdemServico;
-import com.fag.Autofinance.exception.EnviarException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
+import com.fag.Autofinance.exception.ValidarException;
 import com.fag.Autofinance.repositories.AgendamentoRepository;
 import com.fag.Autofinance.repositories.OrdemServicoRepository;
 import com.fag.Autofinance.repositories.UsuarioRepository;
@@ -49,12 +47,45 @@ public class AgendamentoService {
                 .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
     }
 
-    public AgendamentoDTO criarAgendamento(Long numeroOrdem, LocalDateTime dataAgendada, String observacoes) {
-        Usuarios usuario = getUsuarioLogado();
-        UUID empresaId = usuario.getEmpresa().getId();
+    @Transactional
+    public AgendamentoDTO criarAgendamento(Long numeroOrdem, LocalDateTime dataAgendada, String observacoes,
+            String mecanicoUsername) {
+
+        Usuarios usuarioLogado = getUsuarioLogado();
+        UUID empresaId = usuarioLogado.getEmpresa().getId();
+
+        if (dataAgendada == null) {
+            throw new ValidarException("A data do agendamento é obrigatória.");
+        }
+        if (dataAgendada.isBefore(LocalDateTime.now())) {
+            throw new ValidarException("Não é possível criar agendamentos para uma data no passado.");
+        }
 
         OrdemServico ordem = ordemServicoRepository.findByNumeroAndEmpresaId(numeroOrdem, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Ordem de serviço não encontrada"));
+
+        if (ordem.getStatus() == StatusOrdemServico.FINALIZADA || ordem.getStatus() == StatusOrdemServico.INATIVA) {
+            throw new ValidarException(
+                    "Não é possível criar agendamentos para uma Ordem de Serviço que está FINALIZADA ou INATIVA.");
+        }
+
+        Usuarios mecanicoAtribuido;
+        if (mecanicoUsername != null && !mecanicoUsername.isBlank()) {
+            if (usuarioLogado.getRole() != RoleUsuario.ADMIN && !mecanicoUsername.equals(usuarioLogado.getUsername())) {
+                throw new ValidarException("Mecânicos só podem criar agendamentos para si mesmos.");
+            }
+            mecanicoAtribuido = usuarioRepository.findByUsername(mecanicoUsername)
+                    .orElseThrow(
+                            () -> new NaoEncontradoException("Mecânico '" + mecanicoUsername + "' não encontrado"));
+            if (!mecanicoAtribuido.getEmpresa().getId().equals(empresaId)) {
+                throw new ValidarException("Mecânico não pertence a esta empresa");
+            }
+            if (mecanicoAtribuido.getStatus() != StatusCadastros.ATIVO) {
+                throw new ValidarException("Mecânico inativo não pode ser vinculado a um agendamento");
+            }
+        } else {
+            mecanicoAtribuido = usuarioLogado;
+        }
 
         Integer ultimoNumero = agendamentoRepository.findUltimoNumeroPorEmpresa(empresaId).orElse(0);
 
@@ -64,25 +95,16 @@ public class AgendamentoService {
         agendamento.setDataAgendada(dataAgendada);
         agendamento.setStatus(StatusAgendamento.AGENDADO);
         agendamento.setObservacoes(observacoes);
-        agendamento.setMecanico(usuario);
+        agendamento.setMecanico(mecanicoAtribuido);
 
         Agendamento salvo = agendamentoRepository.save(agendamento);
 
-        try {
-            String mensagem = String.format(
-                    "Olá %s! Seu agendamento nº %d (ordem de serviço nº %d) foi marcado para %s.",
-                    ordem.getCliente().getNome(),
-                    salvo.getNumero(),
-                    ordem.getNumero(),
-                    dataAgendada.format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")));
-            whatsAppService.enviarMensagem(ordem.getCliente().getCelular(), mensagem);
-        } catch (EnviarException e) {
-            System.err.println("Erro ao enviar mensagem de agendamento: " + e.getMessage());
-        }
+        enviarMensagemCriacao(salvo);
 
         return new AgendamentoDTO(salvo);
     }
 
+    @Transactional
     public AgendamentoDTO atualizarAgendamento(Integer numero, AgendamentoDTO dto) {
         Usuarios usuario = getUsuarioLogado();
         UUID empresaId = usuario.getEmpresa().getId();
@@ -97,97 +119,69 @@ public class AgendamentoService {
         }
 
         if (dto.getDataAgendada() != null) {
+
+            if (dto.getDataAgendada().isBefore(LocalDateTime.now())) {
+                throw new ValidarException("Não é possível atualizar agendamentos para uma data no passado.");
+            }
+
             agendamento.setDataAgendada(dto.getDataAgendada());
         }
-
         if (dto.getObservacoes() != null) {
             agendamento.setObservacoes(dto.getObservacoes());
         }
-
         if (dto.getStatus() != null) {
             agendamento.setStatus(dto.getStatus());
         }
 
         Agendamento salvo = agendamentoRepository.save(agendamento);
-        try {
-            String msg = String.format(
-                    "Olá %s! O seu agendamento nº %d (ordem de serviço nº %d) foi atualizado:\n" +
-                            "- Data: %s\n" +
-                            "- Status: %s\n" +
-                            "- Observações: %s",
-                    agendamento.getOrdemServico().getCliente().getNome(),
-                    agendamento.getNumero(),
-                    agendamento.getOrdemServico().getNumero(),
-                    agendamento.getDataAgendada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")),
-                    agendamento.getStatus(),
-                    agendamento.getObservacoes() != null ? agendamento.getObservacoes() : "Nenhuma");
-            whatsAppService.enviarMensagem(agendamento.getOrdemServico().getCliente().getCelular(), msg);
-        } catch (EnviarException e) {
-            System.err.println("Erro ao enviar mensagem de alteração de agendamento: " + e.getMessage());
-        }
+
+        enviarMensagemAtualizacao(salvo);
 
         return new AgendamentoDTO(salvo);
     }
 
+    @Transactional
     public void finalizarPorOrdemServico(OrdemServico ordem) {
-        Usuarios usuario = getUsuarioLogado();
-        UUID empresaId = usuario.getEmpresa().getId();
-
         List<Agendamento> agendamentos = agendamentoRepository
-                .findByOrdemServicoNumeroAndOrdemServicoEmpresaId(ordem.getNumero(), empresaId);
+                .findByOrdemServicoNumeroAndOrdemServicoEmpresaId(ordem.getNumero(), ordem.getEmpresa().getId());
 
         if (!agendamentos.isEmpty()) {
             for (Agendamento agendamento : agendamentos) {
                 agendamento.setStatus(StatusAgendamento.CONCLUIDO);
-                agendamentoRepository.save(agendamento);
             }
 
-            try {
-                String msg = String.format(
-                        "Olá %s! Sua ordem de serviço nº %d foi finalizada. Agradecemos pela confiança!",
-                        ordem.getCliente().getNome(),
-                        ordem.getNumero());
-                whatsAppService.enviarMensagem(ordem.getCliente().getCelular(), msg);
-            } catch (EnviarException e) {
-                System.err.println("Erro ao enviar mensagem de finalização: " + e.getMessage());
-            }
+            agendamentoRepository.saveAll(agendamentos);
+
         }
     }
 
+    @Transactional
     public void excluirPorOrdemServico(OrdemServico ordem) {
-        Usuarios usuario = getUsuarioLogado();
-        UUID empresaId = usuario.getEmpresa().getId();
-
         List<Agendamento> agendamentos = agendamentoRepository
-                .findByOrdemServicoNumeroAndOrdemServicoEmpresaId(ordem.getNumero(), empresaId);
+                .findByOrdemServicoNumeroAndOrdemServicoEmpresaId(ordem.getNumero(), ordem.getEmpresa().getId());
 
         if (!agendamentos.isEmpty()) {
             agendamentoRepository.deleteAll(agendamentos);
-
-            try {
-                String msg = String.format(
-                        "Olá %s! Todos os agendamentos da ordem de serviço nº %d foram cancelados.",
-                        ordem.getCliente().getNome(),
-                        ordem.getNumero());
-                whatsAppService.enviarMensagem(ordem.getCliente().getCelular(), msg);
-            } catch (EnviarException e) {
-                System.err.println("Erro ao enviar mensagem de cancelamento: " + e.getMessage());
-            }
+            enviarMensagemCancelamento(ordem);
         }
     }
 
-    public Page<AgendamentoDTO> listarTodos(Pageable pageable) {
+    public List<AgendamentoDTO> listarTodos() {
         Usuarios usuario = getUsuarioLogado();
         UUID empresaId = usuario.getEmpresa().getId();
 
+        List<Agendamento> agendamentos;
+
         if (usuario.getRole() == RoleUsuario.ADMIN) {
-            return agendamentoRepository.findByOrdemServicoEmpresaId(empresaId, pageable)
-                    .map(AgendamentoDTO::new);
+            agendamentos = agendamentoRepository.findByOrdemServicoEmpresaId(empresaId);
         } else {
-            return agendamentoRepository
-                    .findByMecanicoUsernameAndOrdemServicoEmpresaId(usuario.getUsername(), empresaId, pageable)
-                    .map(AgendamentoDTO::new);
+            agendamentos = agendamentoRepository
+                    .findByMecanicoUsernameAndOrdemServicoEmpresaId(usuario.getUsername(), empresaId);
         }
+
+        return agendamentos.stream()
+                .map(AgendamentoDTO::new)
+                .toList();
     }
 
     public List<AgendamentoDTO> listarPorCliente(String nomeCliente) {
@@ -213,5 +207,55 @@ public class AgendamentoService {
         return agendamentos.stream()
                 .map(AgendamentoDTO::new)
                 .toList();
+    }
+
+    // --- MÉTODOS HELPER ---
+
+    private void enviarMensagemCriacao(Agendamento salvo) {
+        try {
+            String mensagem = String.format(
+                    "Olá %s! Seu agendamento nº %d (ordem de serviço nº %d) foi marcado para %s com o mecânico %s.",
+                    salvo.getOrdemServico().getCliente().getNome(),
+                    salvo.getNumero(),
+                    salvo.getOrdemServico().getNumero(),
+                    salvo.getDataAgendada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")),
+                    salvo.getMecanico().getUsername());
+            whatsAppService.enviarMensagem(salvo.getOrdemServico().getCliente().getCelular(), mensagem);
+        } catch (Exception e) {
+            System.err.println("Erro ao enviar mensagem de agendamento: " + e.getMessage());
+        }
+    }
+
+    private void enviarMensagemAtualizacao(Agendamento salvo) {
+        try {
+            String msg = String.format(
+                    "Olá %s! O seu agendamento nº %d (ordem de serviço nº %d) foi atualizado:\n" +
+                            "- Data: %s\n" +
+                            "- Status: %s\s" +
+                            "- Mecânico: %s\n" +
+                            "- Observações: %s",
+                    salvo.getOrdemServico().getCliente().getNome(),
+                    salvo.getNumero(),
+                    salvo.getOrdemServico().getNumero(),
+                    salvo.getDataAgendada().format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm")),
+                    salvo.getStatus(),
+                    salvo.getMecanico().getUsername(),
+                    salvo.getObservacoes() != null ? salvo.getObservacoes() : "Nenhuma");
+            whatsAppService.enviarMensagem(salvo.getOrdemServico().getCliente().getCelular(), msg);
+        } catch (Exception e) {
+            System.err.println("Erro ao enviar mensagem de alteração de agendamento: " + e.getMessage());
+        }
+    }
+
+    private void enviarMensagemCancelamento(OrdemServico ordem) {
+        try {
+            String msg = String.format(
+                    "Olá %s! Todos os agendamentos da ordem de serviço nº %d foram cancelados (OS Inativada).",
+                    ordem.getCliente().getNome(),
+                    ordem.getNumero());
+            whatsAppService.enviarMensagem(ordem.getCliente().getCelular(), msg);
+        } catch (Exception e) {
+            System.err.println("Erro ao enviar mensagem de cancelamento: " + e.getMessage());
+        }
     }
 }

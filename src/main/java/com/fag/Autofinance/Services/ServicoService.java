@@ -1,12 +1,8 @@
 package com.fag.Autofinance.services;
 
 import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
 import com.fag.Autofinance.dto.ServicoDTO;
 import com.fag.Autofinance.entities.Servico;
 import com.fag.Autofinance.entities.Usuarios;
@@ -15,12 +11,13 @@ import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.ServicoRepository;
 import com.fag.Autofinance.repositories.UsuarioRepository;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class ServicoService {
 
     private final ServicoRepository servicoRepository;
-
     private final UsuarioRepository usuarioRepository;
 
     public ServicoService(ServicoRepository servicoRepository, UsuarioRepository usuarioRepository) {
@@ -34,28 +31,30 @@ public class ServicoService {
                 .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
     }
 
-    public Page<ServicoDTO> listarTodos(Pageable pageable) {
+    public List<ServicoDTO> listarTodos() {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return servicoRepository.findAllByEmpresaId(empresaId, pageable)
-                .map(ServicoDTO::new);
+        return servicoRepository.findAllByEmpresaId(empresaId)
+                .stream()
+                .map(ServicoDTO::new)
+                .toList();
     }
 
-    public Page<ServicoDTO> listarPorStatus(StatusCadastros status, Pageable pageable) {
+    public List<ServicoDTO> listarPorStatus(StatusCadastros status) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
-        return servicoRepository.findByStatusAndEmpresaId(status, empresaId, pageable)
-                .map(ServicoDTO::new);
+        return servicoRepository.findByStatusAndEmpresaId(status, empresaId)
+                .stream()
+                .map(ServicoDTO::new)
+                .toList();
     }
 
+    @Transactional
     public Servico criar(Servico servico) {
         Usuarios usuarioLogado = getUsuarioLogado();
-
-        boolean existe = servicoRepository
-                .findByNomeContainingIgnoreCaseAndEmpresaId(servico.getNome(), usuarioLogado.getEmpresa().getId())
-                .stream().anyMatch(s -> s.getNome().equalsIgnoreCase(servico.getNome()));
-
-        if (existe) {
-            throw new JaExisteException("Já existe um serviço com este nome nesta empresa");
-        }
+        UUID empresaId = usuarioLogado.getEmpresa().getId();
+        servicoRepository.findByNomeIgnoreCaseAndEmpresaId(servico.getNome(), empresaId)
+                .ifPresent(s -> {
+                    throw new JaExisteException("Já existe um serviço com este nome nesta empresa");
+                });
 
         servico.setStatus(StatusCadastros.ATIVO);
         servico.setEmpresa(usuarioLogado.getEmpresa());
@@ -63,20 +62,44 @@ public class ServicoService {
         return servicoRepository.save(servico);
     }
 
+    @Transactional
     public Servico atualizar(Long id, Servico servicoAtualizado) {
         UUID empresaId = getUsuarioLogado().getEmpresa().getId();
 
         Servico servicoExistente = servicoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new NaoEncontradoException("Serviço não encontrado"));
 
-        servicoExistente.setNome(servicoAtualizado.getNome());
-        servicoExistente.setDescricao(servicoAtualizado.getDescricao());
-        servicoExistente.setPreco(servicoAtualizado.getPreco());
-        servicoExistente.setDuracao(servicoAtualizado.getDuracao());
-        servicoExistente.setPossuiRetorno(servicoAtualizado.getPossuiRetorno());
-        servicoExistente.setMesesRetornoPadrao(servicoAtualizado.getMesesRetornoPadrao());
-        servicoExistente.setMensagemRetornoPadrao(servicoAtualizado.getMensagemRetornoPadrao());
-        servicoExistente.setStatus(servicoAtualizado.getStatus());
+        if (servicoAtualizado.getNome() != null
+                && !servicoAtualizado.getNome().equalsIgnoreCase(servicoExistente.getNome())) {
+
+            servicoRepository.findByNomeIgnoreCaseAndEmpresaId(servicoAtualizado.getNome(), empresaId)
+                    .ifPresent(s -> {
+                        throw new JaExisteException("Já existe outro serviço com este nome nesta empresa");
+                    });
+            servicoExistente.setNome(servicoAtualizado.getNome());
+        }
+
+        if (servicoAtualizado.getDescricao() != null) {
+            servicoExistente.setDescricao(servicoAtualizado.getDescricao());
+        }
+        if (servicoAtualizado.getPreco() != null) {
+            servicoExistente.setPreco(servicoAtualizado.getPreco());
+        }
+        if (servicoAtualizado.getDuracao() != null) {
+            servicoExistente.setDuracao(servicoAtualizado.getDuracao());
+        }
+        if (servicoAtualizado.getPossuiRetorno() != null) {
+            servicoExistente.setPossuiRetorno(servicoAtualizado.getPossuiRetorno());
+        }
+        if (servicoAtualizado.getMesesRetornoPadrao() != null) {
+            servicoExistente.setMesesRetornoPadrao(servicoAtualizado.getMesesRetornoPadrao());
+        }
+        if (servicoAtualizado.getMensagemRetornoPadrao() != null) {
+            servicoExistente.setMensagemRetornoPadrao(servicoAtualizado.getMensagemRetornoPadrao());
+        }
+        if (servicoAtualizado.getStatus() != null) {
+            servicoExistente.setStatus(servicoAtualizado.getStatus());
+        }
 
         return servicoRepository.save(servicoExistente);
     }

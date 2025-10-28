@@ -2,7 +2,6 @@ package com.fag.Autofinance.services;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import com.fag.Autofinance.dto.CriarEmpresaDTO;
 import com.fag.Autofinance.dto.EmpresaDTO;
 import com.fag.Autofinance.entities.Empresa;
@@ -11,12 +10,15 @@ import com.fag.Autofinance.enums.RoleUsuario;
 import com.fag.Autofinance.exception.JaExisteException;
 import com.fag.Autofinance.repositories.EmpresaRepository;
 import com.fag.Autofinance.repositories.UsuarioRepository;
-
-import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
 public class EmpresaService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmpresaService.class);
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioRepository usuariosRepository;
@@ -38,12 +40,22 @@ public class EmpresaService {
     }
 
     public EmpresaDTO criarEmpresaComAdmin(CriarEmpresaDTO dto) {
+
         String cnpjNormalizado = formatarCnpj(dto.getCnpj());
 
-        boolean existe = empresaRepository.existsByCnpjIgnorePunctuation(cnpjNormalizado);
-        if (existe) {
+        if (empresaRepository.existsByCnpj(cnpjNormalizado)) {
             throw new JaExisteException("Já existe uma empresa com este CNPJ.");
         }
+
+        if (usuariosRepository.existsByUsername(dto.getUsernameAdmin())) {
+            throw new JaExisteException("Esse 'username' (nome de usuário) já está em uso!");
+        }
+
+        if (usuariosRepository.findByEmail(dto.getEmailAdmin()).isPresent()) {
+            throw new JaExisteException("Esse email já está sendo utilizado por outro usuário!");
+        }
+
+        log.info("Iniciando criação da empresa: {}", dto.getNome());
 
         Empresa empresa = new Empresa();
         empresa.setNome(dto.getNome());
@@ -65,6 +77,8 @@ public class EmpresaService {
         admin.setTelefone(dto.getTelefone());
 
         usuariosRepository.save(admin);
+
+        log.info("Empresa {} e Admin {} criados com sucesso.", empresa.getNome(), admin.getUsername());
 
         return new EmpresaDTO(empresa);
     }

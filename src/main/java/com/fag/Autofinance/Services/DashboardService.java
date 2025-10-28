@@ -1,7 +1,6 @@
 package com.fag.Autofinance.services;
 
 import org.springframework.stereotype.Service;
-
 import com.fag.Autofinance.dto.DashboardDTO;
 import com.fag.Autofinance.entities.Agendamento;
 import com.fag.Autofinance.entities.Orcamento;
@@ -11,24 +10,23 @@ import com.fag.Autofinance.enums.RoleUsuario;
 import com.fag.Autofinance.enums.StatusAgendamento;
 import com.fag.Autofinance.enums.StatusCadastros;
 import com.fag.Autofinance.enums.StatusOrdemServico;
+import com.fag.Autofinance.exception.NaoEncontradoException;
 import com.fag.Autofinance.repositories.AgendamentoRepository;
 import com.fag.Autofinance.repositories.ClienteRepository;
 import com.fag.Autofinance.repositories.OrcamentoRepository;
 import com.fag.Autofinance.repositories.OrdemServicoRepository;
 import com.fag.Autofinance.repositories.UsuarioRepository;
 import com.fag.Autofinance.repositories.VeiculoRepository;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.*;
 import java.util.stream.Collectors;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class DashboardService {
@@ -55,58 +53,52 @@ public class DashboardService {
                 this.usuarioRepository = usuarioRepository;
         }
 
-        public DashboardDTO getDashboard(UUID empresaId, Usuarios username) {
-                Usuarios usuario = username;
+        private Usuarios getUsuarioLogado() {
+                String username = SecurityContextHolder.getContext().getAuthentication().getName();
+                return usuarioRepository.findByUsername(username)
+                                .orElseThrow(() -> new NaoEncontradoException("Usuário autenticado não encontrado"));
+        }
 
+        public DashboardDTO getDashboard() {
+                Usuarios usuario = getUsuarioLogado();
+                UUID empresaId = usuario.getEmpresa().getId();
                 boolean isAdmin = usuario.getRole() == RoleUsuario.ADMIN;
 
                 DashboardDTO dto = new DashboardDTO();
 
-                dto.setTotalClientes(clienteRepository.findAllByEmpresaId(empresaId).size());
+                dto.setTotalClientes(clienteRepository.countByEmpresaId(empresaId));
 
                 long totalVeiculosAtivos = veiculoRepository.countByStatusAndEmpresaId(StatusCadastros.ATIVO,
                                 empresaId);
                 dto.setTotalVeiculos((int) totalVeiculosAtivos);
 
-                List<OrdemServico> ordensAndamento = isAdmin
-                                ? osRepository.findByEmpresaIdOrderByStatusCustom(empresaId)
-                                : osRepository.findByMecanicoUsernameAndEmpresaIdOrderByStatusCustom(
-                                                usuario.getUsername(),
-                                                empresaId);
-
-                long ordensEmAndamento = ordensAndamento.stream()
-                                .filter(os -> os.getStatus() == StatusOrdemServico.EM_ANDAMENTO
-                                                || os.getStatus() == StatusOrdemServico.ATIVA)
-                                .count();
-
+                List<StatusOrdemServico> statusAndamento = List.of(StatusOrdemServico.ATIVA,
+                                StatusOrdemServico.EM_ANDAMENTO);
+                long ordensEmAndamento = isAdmin
+                                ? osRepository.countByStatusInAndEmpresaId(statusAndamento, empresaId)
+                                : osRepository.countByStatusInAndMecanicoUsernameAndEmpresaId(statusAndamento,
+                                                usuario.getUsername(), empresaId);
                 dto.setOrdensEmAndamento((int) ordensEmAndamento);
 
-                List<OrdemServico> todasOs = isAdmin
-                                ? osRepository.findByEmpresaIdOrderByStatusCustom(empresaId)
-                                : osRepository.findByMecanicoUsernameAndEmpresaIdOrderByStatusCustom(
-                                                usuario.getUsername(),
-                                                empresaId);
-
                 YearMonth mesAtual = YearMonth.now();
-                LocalDate inicioMes = mesAtual.atDay(1);
-                LocalDate fimMes = mesAtual.atEndOfMonth();
+                LocalDateTime inicioMes = mesAtual.atDay(1).atStartOfDay();
+                LocalDateTime fimMes = mesAtual.atEndOfMonth().atTime(LocalTime.MAX);
 
-                BigDecimal faturamento = todasOs.stream()
-                                .filter(os -> os.getStatus() == StatusOrdemServico.FINALIZADA)
-                                .filter(os -> os.getDataFinalizacao() != null)
-                                .filter(os -> {
-                                        LocalDate dataFinal = os.getDataFinalizacao().toLocalDate();
-                                        return !dataFinal.isBefore(inicioMes) && !dataFinal.isAfter(fimMes);
-                                })
-                                .map(os -> BigDecimal.valueOf(os.getValor() != null ? os.getValor() : 0))
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal faturamento = isAdmin
+                                ? osRepository.sumValorByStatusAndDataFinalizacaoBetweenAndEmpresaId(
+                                                StatusOrdemServico.FINALIZADA, inicioMes, fimMes, empresaId)
+                                : osRepository.sumValorByStatusAndDataFinalizacaoBetweenAndMecanicoUsernameAndEmpresaId(
+                                                StatusOrdemServico.FINALIZADA, inicioMes, fimMes, usuario.getUsername(),
+                                                empresaId);
                 dto.setFaturamentoMensal(faturamento);
 
-                List<DashboardDTO.ServicoResumoDTO> servicosRecentes = todasOs.stream()
-                                .filter(os -> os.getStatus() == StatusOrdemServico.FINALIZADA)
-                                .filter(os -> os.getDataFinalizacao() != null)
-                                .sorted(Comparator.comparing(OrdemServico::getDataFinalizacao).reversed())
-                                .limit(10)
+                List<OrdemServico> osRecentes = isAdmin
+                                ? osRepository.findTop5ByStatusAndEmpresaIdOrderByDataFinalizacaoDesc(
+                                                StatusOrdemServico.FINALIZADA, empresaId)
+                                : osRepository.findTop5ByStatusAndMecanicoUsernameAndEmpresaIdOrderByDataFinalizacaoDesc(
+                                                StatusOrdemServico.FINALIZADA, usuario.getUsername(), empresaId);
+
+                List<DashboardDTO.ServicoResumoDTO> servicosRecentes = osRecentes.stream()
                                 .map(os -> {
                                         DashboardDTO.ServicoResumoDTO s = new DashboardDTO.ServicoResumoDTO();
                                         s.setNomeCliente(os.getCliente().getNome());
@@ -116,49 +108,41 @@ public class DashboardService {
                                 .collect(Collectors.toList());
                 dto.setServicosRecentes(servicosRecentes);
 
-                List<Orcamento> orcamentos = isAdmin
-                                ? orcamentoRepository.findByEmpresaIdOrderByStatusDesc(empresaId)
-                                : orcamentoRepository.findByMecanicoUsernameAndEmpresaIdOrderByStatusDesc(
-                                                usuario.getUsername(),
-                                                empresaId);
+                List<Orcamento> orcamentosRecentes = isAdmin
+                                ? orcamentoRepository.findTop5ByEmpresaIdOrderByDataCadastroDesc(empresaId)
+                                : orcamentoRepository.findTop5ByMecanicoUsernameAndEmpresaIdOrderByDataCadastroDesc(
+                                                usuario.getUsername(), empresaId);
 
-                List<DashboardDTO.OrcamentoResumoDTO> orcamentosRecentes = orcamentos.stream()
-                                .filter(o -> o.getDataCadastro() != null)
-                                .sorted(Comparator.comparing(Orcamento::getDataCadastro).reversed())
-                                .limit(10)
+                List<DashboardDTO.OrcamentoResumoDTO> orcamentosResumo = orcamentosRecentes.stream()
                                 .map(o -> {
                                         DashboardDTO.OrcamentoResumoDTO resumo = new DashboardDTO.OrcamentoResumoDTO();
                                         resumo.setNomeCliente(o.getCliente().getNome());
-                                        resumo.setValor(BigDecimal.valueOf(
-                                                        o.getValorAjustado() != null ? o.getValorAjustado()
-                                                                        : o.getServico().getPreco()));
+
+                                        double valor = (o.getValorAjustado() != null && o.getValorAjustado() > 0)
+                                                        ? o.getValorAjustado()
+                                                        : (o.getServico() != null ? o.getServico().getPreco() : 0.0);
+                                        resumo.setValor(BigDecimal.valueOf(valor));
                                         return resumo;
                                 })
                                 .collect(Collectors.toList());
-                dto.setOrcamentosRecentes(orcamentosRecentes);
+                dto.setOrcamentosRecentes(orcamentosResumo);
 
                 List<Agendamento> agendamentos = isAdmin
-                                ? agendamentoRepository.findByOrdemServicoEmpresaId(empresaId, Pageable.unpaged())
-                                                .getContent()
+                                ? agendamentoRepository.findByOrdemServicoEmpresaId(empresaId)
                                 : agendamentoRepository.findByMecanicoUsernameAndOrdemServicoEmpresaId(
-                                                usuario.getUsername(), empresaId,
-                                                Pageable.unpaged()).getContent();
+                                                usuario.getUsername(), empresaId);
 
                 Map<LocalDate, Boolean> calendario = agendamentos.stream()
-                                .filter(a -> a.getStatus() != StatusAgendamento.CONCLUIDO)
+                                .filter(a -> a.getStatus() != StatusAgendamento.CONCLUIDO
+                                                && a.getStatus() != StatusAgendamento.INATIVO)
+
                                 .collect(Collectors.groupingBy(
                                                 a -> a.getDataAgendada().toLocalDate(),
                                                 Collectors.collectingAndThen(Collectors.counting(),
                                                                 count -> count > 0)));
-
                 dto.setCalendarioAgendamentos(calendario);
 
                 return dto;
         }
 
-        public Usuarios getUsuarioLogado() {
-                String username = SecurityContextHolder.getContext().getAuthentication().getName();
-                return usuarioRepository.findByUsername(username)
-                                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        }
 }

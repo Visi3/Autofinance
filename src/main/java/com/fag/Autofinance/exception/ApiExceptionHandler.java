@@ -29,13 +29,20 @@ public class ApiExceptionHandler {
     public ResponseEntity<Map<String, String>> handleTokenException(TokenException ex) {
         Map<String, String> erro = new HashMap<>();
         erro.put("erro", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
     }
 
     @ExceptionHandler(EnviarException.class)
     public ResponseEntity<Map<String, String>> handleEnviarException(TokenException ex) {
         Map<String, String> erro = new HashMap<>();
         erro.put("erro", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+    }
+
+    @ExceptionHandler(ValidarException.class)
+    public ResponseEntity<Map<String, String>> handleValidarException(ValidarException ex) {
+        Map<String, String> erro = new HashMap<>();
+        erro.put("erro", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
 }

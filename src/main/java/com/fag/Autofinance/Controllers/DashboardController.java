@@ -1,17 +1,10 @@
 package com.fag.Autofinance.controllers;
 
-import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.fag.Autofinance.dto.DashboardDTO;
-import com.fag.Autofinance.entities.Usuarios;
 import com.fag.Autofinance.services.DashboardService;
 
 @RestController
@@ -25,10 +18,9 @@ public class DashboardController {
     }
 
     @GetMapping
-    public DashboardDTO getDashboard() {
-        Usuarios usuario = dashboardService.getUsuarioLogado();
-        UUID empresaId = usuario.getEmpresa().getId();
+    public ResponseEntity<DashboardDTO> getDashboard() {
+        DashboardDTO dto = dashboardService.getDashboard();
 
-        return dashboardService.getDashboard(empresaId, usuario);
+        return ResponseEntity.ok(dto);
     }
 }

@@ -1,12 +1,7 @@
 package com.fag.Autofinance.controllers;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +30,13 @@ public class AgendamentoController {
     public ResponseEntity<AgendamentoDTO> criarAgendamento(
             @PathVariable Long numeroOrdem,
             @RequestBody AgendamentoDTO request) {
+
         AgendamentoDTO dto = agendamentoService.criarAgendamento(
-                numeroOrdem, request.getDataAgendada(), request.getObservacoes());
+                numeroOrdem,
+                request.getDataAgendada(),
+                request.getObservacoes(),
+                request.getMecanicoUsername());
+
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
@@ -49,8 +49,8 @@ public class AgendamentoController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<AgendamentoDTO>> listarTodos(Pageable pageable) {
-        return ResponseEntity.ok(agendamentoService.listarTodos(pageable));
+    public ResponseEntity<List<AgendamentoDTO>> listarTodos() {
+        return ResponseEntity.ok(agendamentoService.listarTodos());
     }
 
     @GetMapping("/cliente")

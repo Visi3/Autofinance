@@ -42,4 +42,10 @@ public interface OrcamentoRepository extends JpaRepository<Orcamento, Long> {
     Optional<Orcamento> findByNumeroAndEmpresaId(Long numeroOrcamento, UUID empresaId);
 
     Optional<Orcamento> findTopByEmpresaIdOrderByNumeroDesc(UUID empresaId);
+
+    // --- PARA DASHBOARD ---
+
+    List<Orcamento> findTop5ByEmpresaIdOrderByDataCadastroDesc(UUID empresaId);
+
+    List<Orcamento> findTop5ByMecanicoUsernameAndEmpresaIdOrderByDataCadastroDesc(String username, UUID empresaId);
 }

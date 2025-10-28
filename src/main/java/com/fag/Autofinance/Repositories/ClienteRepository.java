@@ -18,4 +18,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, String> {
 
     boolean existsByCpfCnpjAndEmpresaId(String cpfCnpj, UUID empresaId);
 
+    // --- PARA DASHBOARD ---
+
+    long countByEmpresaId(UUID empresaId);
 }

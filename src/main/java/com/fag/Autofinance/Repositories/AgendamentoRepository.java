@@ -1,13 +1,9 @@
 package com.fag.Autofinance.repositories;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,10 +14,10 @@ import com.fag.Autofinance.entities.Agendamento;
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID> {
 
-        Page<Agendamento> findByOrdemServicoEmpresaId(UUID empresaId, Pageable pageable);
+        List<Agendamento> findByOrdemServicoEmpresaId(UUID empresaId);
 
-        Page<Agendamento> findByMecanicoUsernameAndOrdemServicoEmpresaId(
-                        String username, UUID empresaId, Pageable pageable);
+        List<Agendamento> findByMecanicoUsernameAndOrdemServicoEmpresaId(
+                        String username, UUID empresaId);
 
         List<Agendamento> findByOrdemServicoNumeroAndOrdemServicoEmpresaId(Integer numeroOrdem, UUID empresaId);
 
